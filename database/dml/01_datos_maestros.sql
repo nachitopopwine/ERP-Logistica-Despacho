@@ -37,7 +37,7 @@ INSERT INTO clientes (rut, nombre, email, telefono, direccion, ciudad, region) V
 ('19876543-9', 'Mayorista Atacama', 'ventas@mayoratacama.cl', '+56943219876', 'Av. Copayapu 369', 'Copiapó', 'Atacama'),
 ('18765432-0', 'Comercial Express', 'contacto@comexpress.cl', '+56932198765', 'Av. Vicuña Mackenna 741', 'Santiago', 'Metropolitana'),
 ('17654321-1', 'Minimarket del Barrio', 'info@minibarrio.cl', '+56921987654', 'Calle Los Olivos 852', 'Quilpué', 'Valparaíso'),
-('16543210-2', 'Supermercado Ahorro', 'ventas@superahorro.cl', '+56919876543', 'Av. San Martín 963', 'Rancagua', 'O'Higgins');
+('16543210-2', 'Supermercado Ahorro', 'ventas@superahorro.cl', '+56919876543', 'Av. San Martín 963', 'Rancagua', 'O''Higgins');
 
 -- ============================================
 -- TABLA: PROVEEDORES (Mínimo 10 registros)
