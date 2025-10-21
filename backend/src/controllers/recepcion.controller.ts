@@ -1,10 +1,10 @@
 import { Request, Response } from 'express';
-import pool from '../config/database.js';
+import pool from '../config/database';
 
 /**
  * Obtener todas las recepciones
  */
-export const getAllRecepciones = async (req: Request, res: Response): Promise<void> => {
+export const getAllRecepciones = async (_req: Request, res: Response): Promise<void> => {
   try {
     const result = await pool.query(`
       SELECT 

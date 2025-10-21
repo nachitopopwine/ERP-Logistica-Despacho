@@ -1,12 +1,12 @@
 import express, { Application, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { testConnection } from './config/database.js';
+import { testConnection } from './config/database';
 
 // Importar rutas
-import pickingRoutes from './routes/picking.routes.js';
-import despachoRoutes from './routes/despacho.routes.js';
-import recepcionRoutes from './routes/recepcion.routes.js';
+import pickingRoutes from './routes/picking.routes';
+import despachoRoutes from './routes/despacho.routes';
+import recepcionRoutes from './routes/recepcion.routes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -26,7 +26,7 @@ app.use(express.urlencoded({ extended: true }));
 // ========== RUTAS ==========
 
 // Ruta principal
-app.get('/', (req: Request, res: Response) => {
+app.get('/', (_req: Request, res: Response) => {
   res.json({
     message: '🚚 API - Módulo de Logística/Despacho',
     version: '1.0.0',
@@ -39,7 +39,7 @@ app.get('/', (req: Request, res: Response) => {
 });
 
 // Health check
-app.get('/health', async (req: Request, res: Response) => {
+app.get('/health', async (_req: Request, res: Response) => {
   const dbStatus = await testConnection();
   res.status(dbStatus ? 200 : 500).json({
     status: dbStatus ? 'OK' : 'ERROR',

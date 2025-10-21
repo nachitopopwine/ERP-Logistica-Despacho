@@ -3,7 +3,7 @@ import {
   getAllGuiasDespacho,
   getGuiaDespachoById,
   createGuiaDespacho
-} from '../controllers/despacho.controller.js';
+} from '../controllers/despacho.controller';
 
 const router = Router();
 

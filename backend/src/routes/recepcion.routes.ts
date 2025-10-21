@@ -3,7 +3,7 @@ import {
   getAllRecepciones,
   getRecepcionById,
   createRecepcion
-} from '../controllers/recepcion.controller.js';
+} from '../controllers/recepcion.controller';
 
 const router = Router();
 
