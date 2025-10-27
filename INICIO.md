@@ -20,61 +20,24 @@ notepad .env
 ```
 
 Configurar así:
-```env
-PORT=3000
-NODE_ENV=development
 
+```env
+# Puerto del servidor
+PORT=3000
+
+# Configuración de conexión a PostgreSQL
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
-DB_PASSWORD=TU_PASSWORD_AQUI
+DB_PASSWORD=tu_password
 DB_NAME=erp_logistica
 
-CORS_ORIGIN=http://localhost:5173
+# Opcional: Esquemas si quieres diferenciarlos explícitamente
+SCHEMA_PUBLIC=public
+SCHEMA_LOGISTICA=logistica
 ```
 
-### 3️⃣ Crear Base de Datos en pgAdmin4
-
-1. Abrir **pgAdmin4**
-2. Conectarse a PostgreSQL
-3. Click derecho en **"Databases"** → **"Create"** → **"Database..."**
-4. **Database name**: `erp_logistica`
-5. **Owner**: `postgres`
-6. Click **"Save"**
-
-### 4️⃣ Ejecutar Scripts SQL
-
-**Opción A: Desde pgAdmin4 (Recomendado)**
-
-1. Click derecho en la base de datos `erp_logistica`
-2. Click en **"Query Tool"**
-3. Abrir cada script y ejecutarlo en este orden:
-
-   a. `database/ddl/01_maestros.sql` → Click F5 o ⚡
-   
-   b. `database/ddl/02_logistica.sql` → Click F5 o ⚡
-   
-   c. `database/dml/01_datos_maestros.sql` → Click F5 o ⚡
-   
-   d. `database/dml/02_datos_logistica.sql` → Click F5 o ⚡
-
-**Opción B: Desde PowerShell**
-
-```powershell
-# Conectarse a PostgreSQL y ejecutar scripts
-psql -U postgres -d erp_logistica -f database/ddl/01_maestros.sql
-psql -U postgres -d erp_logistica -f database/ddl/02_logistica.sql
-psql -U postgres -d erp_logistica -f database/dml/01_datos_maestros.sql
-psql -U postgres -d erp_logistica -f database/dml/02_datos_logistica.sql
-```
-
-### 5️⃣ Verificar Datos en pgAdmin4
-
-1. Expandir `erp_logistica` → `Schemas` → `public` → `Tables`
-2. Click derecho en cualquier tabla → `View/Edit Data` → `All Rows`
-3. Deberías ver los datos cargados
-
-### 6️⃣ Iniciar el Servidor Backend
+### 3️⃣ Iniciar el Servidor Backend
 
 ```powershell
 cd backend
@@ -82,6 +45,7 @@ npm run dev
 ```
 
 **Deberías ver:**
+
 ```
 ✅ Conectado a PostgreSQL
 🔗 Conexión a BD verificada: [timestamp]
@@ -93,11 +57,12 @@ npm run dev
    ...
 ```
 
-### 7️⃣ Probar Endpoints
+### 4️⃣ Probar Endpoints
 
 **Opción A: Usar navegador**
 
 Abrir en el navegador:
+
 - http://localhost:3000/
 - http://localhost:3000/health
 - http://localhost:3000/api/picking
@@ -215,46 +180,3 @@ taskkill /PID [numero] /F
 - [ ] Capturas tomadas para informe
 
 ---
-
-## 🔄 Workflow Git Recomendado
-
-```powershell
-# Ver estado actual
-git status
-
-# Agregar todos los archivos
-git add .
-
-# Commit inicial
-git commit -m "feat: configuración inicial Sprint 2 - backend + DB"
-
-# Subir a GitHub
-git push origin main
-
-# Para trabajar en frontend, crear rama
-git checkout -b feature/frontend
-git add .
-git commit -m "feat: estructura inicial frontend React + TypeScript"
-git push origin feature/frontend
-```
-
----
-
-## 📞 Ayuda
-
-Si tienes problemas:
-
-1. Revisar los archivos README en cada carpeta:
-   - `backend/README.md`
-   - `database/README.md`
-   - `docs/SPRINT2.md`
-
-2. Verificar que PostgreSQL esté corriendo
-
-3. Revisar logs en la terminal del backend
-
-4. Contactar al equipo para resolución conjunta
-
----
-
-**¡Éxito con el Sprint 2!** 🚀

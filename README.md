@@ -1,16 +1,21 @@
 # ERP - Módulo de Logística/Despacho
+
 ## Grupo 5 - Sistemas de Información II
 
 **Integrantes:**
+
 - Cristóbal Rios Barraza
 - Matias Cortes Borquez
 - Ignacio Rodriguez Bruna
+- Eduardo Miranda Cortés
+- Vicente Cortés Espinoza
 
 ---
 
 ## 📋 Descripción del Proyecto
 
 Módulo de Logística/Despacho para sistema ERP integrado. Este módulo coordina:
+
 - **Despachos desde Ventas**: OT de Picking → Guía de Despacho → Egreso de Inventario
 - **Recepciones desde Compras**: Registro de Recepción → Ingreso a Inventario
 
@@ -19,19 +24,22 @@ Módulo de Logística/Despacho para sistema ERP integrado. Este módulo coordina
 ## 🛠️ Stack Tecnológico
 
 ### Backend
+
 - **Node.js** + **Express**
 - **TypeScript**
 - **PostgreSQL** (Base de datos)
 - **pg** (PostgreSQL client)
 
 ### Frontend
+
 - **React** + **TypeScript**
 - **Vite** (Build tool)
 - **Axios** (HTTP client)
 - **React Router** (Navegación)
 
 ### Base de Datos
-- **PostgreSQL** 
+
+- **PostgreSQL** (esquema public y esquema logistica)
 - **pgAdmin4** (Administración)
 
 ---
@@ -61,11 +69,6 @@ ERP-Logistica-Despacho/
 │   ├── package.json
 │   └── tsconfig.json
 │
-├── database/             # Scripts SQL
-│   ├── ddl/             # Creación de tablas (CREATE TABLE)
-│   ├── dml/             # Inserción de datos (INSERT INTO)
-│   └── modelo_ER.png    # Diagrama del modelo de datos
-│
 └── docs/                 # Documentación
     ├── arquitectura.md
     ├── sprint2.md
@@ -77,28 +80,13 @@ ERP-Logistica-Despacho/
 ## 🚀 Instalación y Configuración
 
 ### 1. Clonar el repositorio
+
 ```bash
 git clone https://github.com/nachitopopwine/ERP-Logistica-Despacho.git
 cd ERP-Logistica-Despacho
 ```
 
-### 2. Configurar Base de Datos (PostgreSQL)
-
-1. Crear base de datos en pgAdmin4:
-   ```sql
-   CREATE DATABASE erp_logistica;
-   ```
-
-2. Ejecutar scripts en orden:
-   ```bash
-   # Conectarse a la base de datos y ejecutar:
-   \i database/ddl/01_maestros.sql
-   \i database/ddl/02_logistica.sql
-   \i database/dml/01_datos_maestros.sql
-   \i database/dml/02_datos_logistica.sql
-   ```
-
-### 3. Configurar Backend
+### 2. Configurar Backend
 
 ```bash
 cd backend
@@ -106,21 +94,30 @@ npm install
 ```
 
 Crear archivo `.env` (basado en `.env.example`):
+
 ```env
+# Puerto del servidor
 PORT=3000
+
+# Configuración de conexión a PostgreSQL
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=tu_password
 DB_NAME=erp_logistica
+
+# Opcional: Esquemas si quieres diferenciarlos explícitamente
+SCHEMA_PUBLIC=public
+SCHEMA_LOGISTICA=logistica
 ```
 
 Iniciar servidor:
+
 ```bash
 npm run dev
 ```
 
-### 4. Configurar Frontend
+### 3. Configurar Frontend
 
 ```bash
 cd frontend
@@ -146,16 +143,19 @@ La aplicación estará disponible en: `http://localhost:5173`
 ## 🔗 Endpoints API (Backend)
 
 ### Órdenes de Picking
+
 - `GET /api/picking` - Listar todas las OT
 - `GET /api/picking/:id` - Obtener una OT específica
 - `POST /api/picking` - Crear nueva OT
 - `PUT /api/picking/:id` - Actualizar OT
 
 ### Guías de Despacho
+
 - `GET /api/despacho` - Listar guías
 - `POST /api/despacho` - Crear guía de despacho
 
 ### Recepciones
+
 - `GET /api/recepcion` - Listar recepciones
 - `POST /api/recepcion` - Registrar recepción
 
@@ -192,18 +192,21 @@ git push origin feature/nombre-funcionalidad
 ## 📝 Próximos Pasos
 
 ### Sprint 2 (Actual)
+
 - [ ] Formulario OT de Picking funcional
 - [ ] Formulario Guía de Despacho funcional
 - [ ] Validación: No crear guía sin OT válida
 - [ ] Consulta de OT y Guías existentes
 
 ### Sprint 3 (18/11)
+
 - [ ] Integración con maestros canónicos (clientes, productos, empleados)
 - [ ] Sistema de autenticación y roles
 - [ ] 3 validaciones en total
 - [ ] Integración cruzada con otro módulo
 
 ### Sprint 4 (09/12)
+
 - [ ] Dashboard en Power BI
 - [ ] Carga de 100+ registros en tabla crítica
 - [ ] Pruebas de integración documentadas
@@ -213,8 +216,10 @@ git push origin feature/nombre-funcionalidad
 ## 👥 Contribuidores
 
 - Cristóbal Rios Barraza
-- Matias Cortes Borquez  
+- Matias Cortes Borquez
 - Ignacio Rodriguez Bruna
+- Eduardo Miranda Cortés
+- Vicente Cortés Espinoza
 
 **Docente:** Felipe Quiroz Valenzuela  
 **Asignatura:** Sistemas de Información II  
