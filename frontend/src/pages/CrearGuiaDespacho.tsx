@@ -87,11 +87,21 @@ const CrearGuiaDespacho: React.FC = () => {
           });
         } else {
           console.log('⚠️ No se pudo extraer dirección del formato esperado');
-          setFormData({ ...formData, id_ot: Number(otId) });
+          setDireccionAutomatica('');
+          setFormData({ 
+            ...formData, 
+            id_ot: Number(otId),
+            direccion_entrega: '' 
+          });
         }
       } else {
         console.log('⚠️ La OT no tiene observaciones');
-        setFormData({ ...formData, id_ot: Number(otId) });
+        setDireccionAutomatica('');
+        setFormData({ 
+          ...formData, 
+          id_ot: Number(otId),
+          direccion_entrega: '' 
+        });
       }
     } else {
       console.log('❌ No se encontró la orden con ID:', otId);

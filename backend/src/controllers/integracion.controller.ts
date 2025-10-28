@@ -10,32 +10,49 @@ import pool from '../config/database';
 
 /**
  * GET /api/integracion/pedidos-ventas
- * Lista todos los pedidos de ventas recibidos desde el ERP de Ventas
- * CONSULTA BD REAL: logistica.pedidos_ventas
+ * Lista todos los pedidos de ventas DESDE EL MÓDULO DE VENTAS
+ * CONSULTA BD REAL: Ventas.ventas + Ventas.detalle_venta
+ * 
+ * LÓGICA DE ESTADO:
+ * - PENDIENTE: Pedidos que NO tienen una OT de Picking asignada
+ * - PROCESADO: Pedidos que YA tienen una OT de Picking asignada
  */
 export const listarPedidosVentas = async (_req: Request, res: Response) => {
   try {
     const query = `
       SELECT 
-        pv.id,
-        pv.numero_pedido,
-        pv.cliente,
-        pv.direccion_despacho,
-        pv.estado,
-        pv.fecha_pedido,
-        pv.fecha_recepcion,
-        pv.observaciones,
-        COUNT(dpv.id) as cantidad_productos
-      FROM logistica.pedidos_ventas pv
-      LEFT JOIN logistica.detalles_pedido_venta dpv ON pv.id = dpv.pedido_venta_id
-      GROUP BY pv.id, pv.numero_pedido, pv.cliente, pv.direccion_despacho, 
-               pv.estado, pv.fecha_pedido, pv.fecha_recepcion, pv.observaciones
-      ORDER BY pv.fecha_recepcion DESC
+        v.id_venta as id,
+        'PV-' || LPAD(v.id_venta::text, 6, '0') as numero_pedido,
+        c.nombre || ' ' || c.apellido as cliente,
+        c.direccion as direccion_despacho,
+        CASE 
+          WHEN EXISTS (
+            SELECT 1 FROM "Logistica".log_ot_picking op 
+            WHERE op.observaciones LIKE '%PV-' || LPAD(v.id_venta::text, 6, '0') || '%'
+          ) THEN 'PROCESADO'
+          ELSE 'PENDIENTE'
+        END as estado,
+        v.fecha_pedido,
+        v.fecha_pedido as fecha_recepcion,
+        'Forma de pago: ' || v.forma_de_pago || ' | Condiciones: ' || v.condiciones_de_pago as observaciones,
+        COUNT(dv.id_producto) as cantidad_productos,
+        v.total
+      FROM "Ventas".ventas v
+      INNER JOIN public.cliente c ON v.id_cliente = c.id_cliente
+      LEFT JOIN "Ventas".detalle_venta dv ON v.id_venta = dv.id_venta
+      GROUP BY v.id_venta, c.nombre, c.apellido, c.direccion, v.estado, 
+               v.fecha_pedido, v.forma_de_pago, v.condiciones_de_pago, v.total
+      ORDER BY v.fecha_pedido DESC
     `;
     
     const result = await pool.query(query);
     
-    console.log('✅ Pedidos de ventas encontrados:', result.rows.length);
+    console.log('✅ Pedidos de ventas encontrados (desde Ventas):', result.rows.length);
+    
+    // Contar por estado
+    const pendientes = result.rows.filter(r => r.estado === 'PENDIENTE').length;
+    const procesados = result.rows.filter(r => r.estado === 'PROCESADO').length;
+    console.log(`   📊 PENDIENTES: ${pendientes} | PROCESADOS: ${procesados}`);
     
     res.json({
       success: true,
@@ -54,28 +71,53 @@ export const listarPedidosVentas = async (_req: Request, res: Response) => {
 
 /**
  * GET /api/integracion/pedidos-ventas/:id
- * Obtiene un pedido de venta específico con sus detalles
+ * Obtiene un pedido de venta específico con sus detalles DESDE VENTAS
  */
-export const obtenerPedidoVenta = async (req: Request, res: Response) => {
+export const obtenerPedidoVenta = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     
-    // Obtener pedido
+    // Obtener pedido con datos del cliente
     const pedidoQuery = `
-      SELECT * FROM logistica.pedidos_ventas WHERE id = $1
+      SELECT 
+        v.id_venta as id,
+        'PV-' || LPAD(v.id_venta::text, 6, '0') as numero_pedido,
+        c.nombre || ' ' || c.apellido as cliente,
+        c.direccion as direccion_despacho,
+        CASE 
+          WHEN v.estado = true THEN 'PROCESADO'
+          ELSE 'PENDIENTE'
+        END as estado,
+        v.fecha_pedido,
+        v.total,
+        v.forma_de_pago,
+        v.condiciones_de_pago
+      FROM "Ventas".ventas v
+      INNER JOIN public.cliente c ON v.id_cliente = c.id_cliente
+      WHERE v.id_venta = $1
     `;
     const pedidoResult = await pool.query(pedidoQuery, [id]);
     
     if (pedidoResult.rows.length === 0) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'Pedido de venta no encontrado'
       });
+      return;
     }
     
-    // Obtener detalles
+    // Obtener detalles con nombre del producto
     const detallesQuery = `
-      SELECT * FROM logistica.detalles_pedido_venta WHERE pedido_venta_id = $1
+      SELECT 
+        dv.id_venta,
+        dv.id_producto,
+        p.nombre as producto_nombre,
+        dv.cantidad,
+        dv.precio_unitario,
+        (dv.cantidad * dv.precio_unitario) as subtotal
+      FROM "Ventas".detalle_venta dv
+      INNER JOIN public.producto p ON dv.id_producto = p.id_producto
+      WHERE dv.id_venta = $1
     `;
     const detallesResult = await pool.query(detallesQuery, [id]);
     
@@ -99,8 +141,9 @@ export const obtenerPedidoVenta = async (req: Request, res: Response) => {
 /**
  * POST /api/integracion/recibir-pedido-venta
  * Recibe un nuevo pedido desde el ERP de Ventas
+ * NOTA: Este endpoint ya no se usa, los datos vienen directamente de Ventas.ventas
  */
-export const recibirPedidoVenta = async (req: Request, res: Response) => {
+export const recibirPedidoVenta = async (req: Request, res: Response): Promise<void> => {
   const client = await pool.connect();
   
   try {
@@ -117,10 +160,11 @@ export const recibirPedidoVenta = async (req: Request, res: Response) => {
     
     // Validar datos requeridos
     if (!numero_pedido || !cliente || !direccion_despacho || !detalles || detalles.length === 0) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Faltan datos requeridos: numero_pedido, cliente, direccion_despacho y detalles'
       });
+      return;
     }
     
     // Insertar pedido
@@ -180,32 +224,38 @@ export const recibirPedidoVenta = async (req: Request, res: Response) => {
 
 /**
  * GET /api/integracion/ordenes-compra
- * Lista todas las órdenes de compra recibidas desde el ERP de Compras
- * CONSULTA BD REAL: logistica.ordenes_compra
+ * Lista todas las órdenes de compra DESDE EL MÓDULO DE COMPRAS
+ * CONSULTA BD REAL: Compras.compras_oc + Compras.compras_detalle
  */
 export const listarOrdenesCompra = async (_req: Request, res: Response) => {
   try {
     const query = `
       SELECT 
-        oc.id,
-        oc.numero_orden,
-        oc.proveedor,
-        oc.estado,
-        oc.fecha_orden,
-        oc.fecha_recepcion,
-        oc.fecha_esperada_entrega,
-        oc.observaciones,
-        COUNT(doc.id) as cantidad_productos
-      FROM logistica.ordenes_compra oc
-      LEFT JOIN logistica.detalles_orden_compra doc ON oc.id = doc.orden_compra_id
-      GROUP BY oc.id, oc.numero_orden, oc.proveedor, oc.estado, 
-               oc.fecha_orden, oc.fecha_recepcion, oc.fecha_esperada_entrega, oc.observaciones
-      ORDER BY oc.fecha_recepcion DESC
+        oc.id_orden_compra as id,
+        'OC-' || LPAD(oc.id_orden_compra::text, 6, '0') as numero_orden,
+        prov.nombre as proveedor,
+        CASE 
+          WHEN oc.estado = 'Completada' THEN 'RECEPCIONADA'
+          WHEN oc.estado = 'Cancelada' THEN 'RECHAZADA'
+          ELSE 'PENDIENTE'
+        END as estado,
+        oc.fecha as fecha_orden,
+        oc.fecha as fecha_recepcion,
+        NULL as fecha_esperada_entrega,
+        'Empleado: ' || COALESCE(e.nombre || ' ' || e.apellido, 'N/A') as observaciones,
+        COUNT(cd.id_producto) as cantidad_productos
+      FROM "Compras".compras_oc oc
+      LEFT JOIN public.proveedor prov ON oc.id_proveedor = prov.id_proveedor
+      LEFT JOIN public.empleado e ON oc.id_empleado = e.id_empleado
+      LEFT JOIN "Compras".compras_detalle cd ON oc.id_orden_compra = cd.id_orden_compra
+      GROUP BY oc.id_orden_compra, prov.nombre, oc.estado, oc.fecha, 
+               e.nombre, e.apellido
+      ORDER BY oc.fecha DESC
     `;
     
     const result = await pool.query(query);
     
-    console.log('✅ Órdenes de compra encontradas:', result.rows.length);
+    console.log('✅ Órdenes de compra encontradas (desde Compras):', result.rows.length);
     
     res.json({
       success: true,
@@ -224,28 +274,53 @@ export const listarOrdenesCompra = async (_req: Request, res: Response) => {
 
 /**
  * GET /api/integracion/ordenes-compra/:id
- * Obtiene una orden de compra específica con sus detalles
+ * Obtiene una orden de compra específica con sus detalles DESDE COMPRAS
  */
-export const obtenerOrdenCompra = async (req: Request, res: Response) => {
+export const obtenerOrdenCompra = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     
-    // Obtener orden
+    // Obtener orden con datos del proveedor
     const ordenQuery = `
-      SELECT * FROM logistica.ordenes_compra WHERE id = $1
+      SELECT 
+        oc.id_orden_compra as id,
+        'OC-' || LPAD(oc.id_orden_compra::text, 6, '0') as numero_orden,
+        prov.nombre as proveedor,
+        CASE 
+          WHEN oc.estado = 'Completada' THEN 'RECEPCIONADA'
+          WHEN oc.estado = 'Cancelada' THEN 'RECHAZADA'
+          ELSE 'PENDIENTE'
+        END as estado,
+        oc.fecha as fecha_orden,
+        oc.fecha as fecha_recepcion,
+        e.nombre || ' ' || e.apellido as empleado
+      FROM "Compras".compras_oc oc
+      LEFT JOIN public.proveedor prov ON oc.id_proveedor = prov.id_proveedor
+      LEFT JOIN public.empleado e ON oc.id_empleado = e.id_empleado
+      WHERE oc.id_orden_compra = $1
     `;
     const ordenResult = await pool.query(ordenQuery, [id]);
     
     if (ordenResult.rows.length === 0) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'Orden de compra no encontrada'
       });
+      return;
     }
     
-    // Obtener detalles
+    // Obtener detalles con nombre del producto
     const detallesQuery = `
-      SELECT * FROM logistica.detalles_orden_compra WHERE orden_compra_id = $1
+      SELECT 
+        cd.id_detalle_compra as id,
+        cd.id_producto,
+        p.nombre as producto_nombre,
+        cd.cantidad,
+        cd.precio_unitario,
+        cd.subtotal
+      FROM "Compras".compras_detalle cd
+      INNER JOIN public.producto p ON cd.id_producto = p.id_producto
+      WHERE cd.id_orden_compra = $1
     `;
     const detallesResult = await pool.query(detallesQuery, [id]);
     
@@ -269,8 +344,9 @@ export const obtenerOrdenCompra = async (req: Request, res: Response) => {
 /**
  * POST /api/integracion/recibir-orden-compra
  * Recibe una nueva orden de compra desde el ERP de Compras
+ * NOTA: Este endpoint ya no se usa, los datos vienen directamente de Compras.compras_oc
  */
-export const recibirOrdenCompra = async (req: Request, res: Response) => {
+export const recibirOrdenCompra = async (req: Request, res: Response): Promise<void> => {
   const client = await pool.connect();
   
   try {
@@ -287,10 +363,11 @@ export const recibirOrdenCompra = async (req: Request, res: Response) => {
     
     // Validar datos requeridos
     if (!numero_orden || !proveedor || !detalles || detalles.length === 0) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Faltan datos requeridos: numero_orden, proveedor y detalles'
       });
+      return;
     }
     
     // Insertar orden

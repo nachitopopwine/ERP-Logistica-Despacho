@@ -42,19 +42,18 @@ export const listarEmpleados = async (_req: Request, res: Response) => {
 /**
  * GET /api/recursos/transportistas
  * Lista todos los transportistas activos
- * CONSULTA BD REAL: logistica.transportistas
+ * CONSULTA BD REAL: Logistica.log_transportistas
  */
 export const listarTransportistas = async (_req: Request, res: Response) => {
   try {
     const query = `
       SELECT 
-        id,
+        id_transportista as id,
         nombre,
         rut,
         telefono,
         email
-      FROM logistica.transportistas
-      WHERE activo = true
+      FROM "Logistica".log_transportistas
       ORDER BY nombre
     `;
     
