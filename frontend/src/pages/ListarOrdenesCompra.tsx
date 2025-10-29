@@ -1,181 +1,161 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import integracionService from '../services/integracionService';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import EmptyState from '../components/common/EmptyState';
+import AlertMessage from '../components/common/AlertMessage';
+import Badge from '../components/common/Badge';
+import PageHeader from '../components/common/PageHeader';
+import Button from '../components/common/Button';
+import SearchBar from '../components/common/SearchBar';
+import SelectField from '../components/common/SelectField';
+import StatsCard from '../components/common/StatsCard';
+import InfoBox from '../components/common/InfoBox';
 import type { OrdenCompra } from '../types';
 
 export default function ListarOrdenesCompra() {
   const [ordenes, setOrdenes] = useState<OrdenCompra[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [filtroEstado, setFiltroEstado] = useState('TODOS');
+  const [ordenamiento, setOrdenamiento] = useState<'fecha_desc' | 'fecha_asc' | 'numero_desc' | 'numero_asc'>('fecha_desc');
+
+  useEffect(() => { cargarOrdenes(); }, []);
 
   const cargarOrdenes = async () => {
     try {
       setLoading(true);
       setError(null);
-      console.log('🔍 Cargando órdenes de compra...');
       const response = await integracionService.listarOrdenesCompra();
-      console.log('✅ Respuesta recibida:', response);
-      
-      if (response.success && response.data) {
-        console.log('📦 Órdenes encontradas:', response.data.length);
-        setOrdenes(response.data);
-      } else {
-        console.error('❌ Error en respuesta:', response);
-        setError('No se pudieron cargar las órdenes de compra');
-      }
+      if (response?.success && response.data) setOrdenes(response.data);
+      else setError('No se pudieron cargar las órdenes de compra');
     } catch (err: any) {
-      console.error('❌ Error capturado:', err);
       setError(err.response?.data?.message || err.message || 'Error al cargar órdenes de compra');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    cargarOrdenes();
-  }, []);
+  const contarPorEstado = (estado: string) => ordenes.filter(o => o.estado === estado).length;
 
-  const getEstadoBadge = (estado: string) => {
-    const estilos = {
-      'PENDIENTE': { bg: '#fef3c7', color: '#92400e', emoji: '⏳' },
-      'RECEPCIONADA': { bg: '#d1fae5', color: '#065f46', emoji: '✅' },
-      'RECHAZADA': { bg: '#fee2e2', color: '#991b1b', emoji: '❌' },
-    };
-    const estilo = estilos[estado as keyof typeof estilos] || estilos.PENDIENTE;
-    
-    return (
-      <span style={{
-        backgroundColor: estilo.bg,
-        color: estilo.color,
-        padding: '6px 12px',
-        borderRadius: '6px',
-        fontSize: '13px',
-        fontWeight: '600',
-        whiteSpace: 'nowrap'
-      }}>
-        {estilo.emoji} {estado}
-      </span>
-    );
+  const ordenesFiltradas = React.useMemo(() => {
+    let resultado = [...ordenes];
+
+    if (busqueda.trim()) {
+      const lower = busqueda.toLowerCase();
+      resultado = resultado.filter(o =>
+        o.numero_orden.toLowerCase().includes(lower) ||
+        o.proveedor.toLowerCase().includes(lower) ||
+        o.observaciones?.toLowerCase().includes(lower)
+      );
+    }
+
+    if (filtroEstado !== 'TODOS') resultado = resultado.filter(o => o.estado === filtroEstado);
+
+    resultado.sort((a, b) => {
+      switch (ordenamiento) {
+        case 'fecha_desc': return new Date(b.fecha_orden).getTime() - new Date(a.fecha_orden).getTime();
+        case 'fecha_asc': return new Date(a.fecha_orden).getTime() - new Date(b.fecha_orden).getTime();
+        case 'numero_desc': return b.numero_orden.localeCompare(a.numero_orden);
+        case 'numero_asc': return a.numero_orden.localeCompare(b.numero_orden);
+        default: return 0;
+      }
+    });
+
+    return resultado;
+  }, [ordenes, busqueda, filtroEstado, ordenamiento]);
+
+  const getEstadoVariant = (estado: string): 'pendiente' | 'completado' | 'cancelado' => {
+    if (estado === 'PENDIENTE') return 'pendiente';
+    if (estado === 'RECEPCIONADA') return 'completado';
+    return 'cancelado';
   };
 
-  if (loading) {
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setFiltroEstado('TODOS');
+    setOrdenamiento('fecha_desc');
+  };
+
+  if (loading) return <div className="list-container"><LoadingSpinner message="Cargando órdenes de compra..." size="large" /></div>;
+
+  if (error) {
     return (
       <div className="list-container">
-        <h1>📦 Órdenes de Compra Recibidas</h1>
-        <div style={{ textAlign: 'center', padding: '40px', color: '#718096' }}>
-          <p>⏳ Cargando órdenes de compra...</p>
-        </div>
+        <AlertMessage type="error" message={error} onClose={() => setError(null)} />
+        <EmptyState icon="❌" title="Error al cargar órdenes" description={error} actionLabel="🔄 Reintentar" onAction={cargarOrdenes} />
       </div>
     );
   }
 
   return (
     <div className="list-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <h1>📦 Órdenes de Compra Recibidas</h1>
-        <button 
-          onClick={cargarOrdenes}
-          style={{
-            padding: '10px 20px',
-            fontSize: '14px',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            border: 'none',
-            borderRadius: '8px',
-            color: 'white',
-            cursor: 'pointer',
-            fontWeight: '600'
-          }}
-        >
-          🔄 Actualizar
-        </button>
+      <PageHeader 
+        title="Órdenes de Compra Recibidas"
+        subtitle={`${ordenes.length} órdenes integradas`}
+        icon="📦"
+        actions={<Button onClick={cargarOrdenes} icon="🔄" variant="secondary">Actualizar</Button>}
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <StatsCard title="Pendientes" value={contarPorEstado('PENDIENTE')} icon="⏳" color="yellow" subtitle="Esperan recepción" />
+        <StatsCard title="Recepcionadas" value={contarPorEstado('RECEPCIONADA')} icon="✅" color="green" subtitle="Ya ingresadas" />
       </div>
 
-      {error && (
-        <div style={{
-          backgroundColor: '#fee2e2',
-          color: '#991b1b',
-          padding: '12px 16px',
-          borderRadius: '8px',
-          marginBottom: '20px',
-          borderLeft: '4px solid #dc2626'
-        }}>
-          ❌ {error}
+      <div style={{ background: 'white', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '2px solid #e2e8f0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px', marginBottom: '16px' }}>
+          <SearchBar value={busqueda} onChange={setBusqueda} placeholder="N° orden, proveedor, observaciones..." />
+          <SelectField label="" name="estado" value={filtroEstado} onChange={setFiltroEstado} options={[
+            { value: 'TODOS', label: `📋 Todos (${ordenes.length})` },
+            { value: 'PENDIENTE', label: `⏳ Pendientes (${contarPorEstado('PENDIENTE')})` },
+            { value: 'RECEPCIONADA', label: `✅ Recepcionadas (${contarPorEstado('RECEPCIONADA')})` }
+          ]} />
+          <SelectField label="" name="orden" value={ordenamiento} onChange={(v) => setOrdenamiento(v as typeof ordenamiento)} options={[
+            { value: 'fecha_desc', label: '📅 Fecha: Reciente' },
+            { value: 'fecha_asc', label: '📅 Fecha: Antiguo' },
+            { value: 'numero_desc', label: '🔢 N° Orden: Z-A' },
+            { value: 'numero_asc', label: '🔢 N° Orden: A-Z' }
+          ]} />
         </div>
-      )}
+        {(busqueda || filtroEstado !== 'TODOS' || ordenamiento !== 'fecha_desc') && (
+          <Button onClick={limpiarFiltros} variant="ghost" size="small" icon="🗑️">Limpiar filtros</Button>
+        )}
+      </div>
 
-      {ordenes.length === 0 ? (
-        <div style={{
-          textAlign: 'center',
-          padding: '60px 20px',
-          backgroundColor: '#f9fafb',
-          borderRadius: '12px',
-          border: '2px dashed #d1d5db'
-        }}>
-          <p style={{ fontSize: '48px', margin: '0 0 16px 0' }}>📋</p>
-          <p style={{ fontSize: '18px', color: '#374151', fontWeight: '600', margin: '0 0 8px 0' }}>
-            No hay órdenes de compra recibidas
-          </p>
-          <p style={{ color: '#6b7280', margin: 0 }}>
-            Las OC desde el ERP de Compras aparecerán aquí automáticamente
-          </p>
-        </div>
+      {ordenesFiltradas.length === 0 ? (
+        <EmptyState icon="📋" title="No hay órdenes" description="No se encontraron órdenes con los filtros aplicados" actionLabel="🗑️ Limpiar filtros" onAction={limpiarFiltros} />
       ) : (
         <>
-          <p style={{ color: '#718096', marginBottom: '16px', fontSize: '14px' }}>
-            📊 Total de órdenes: <strong>{ordenes.length}</strong>
-          </p>
-
+          <p style={{ color: '#64748b', marginBottom: '16px' }}>📈 Mostrando {ordenesFiltradas.length} de {ordenes.length} órdenes</p>
+          
           <div style={{ overflowX: 'auto' }}>
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              backgroundColor: 'white',
-              borderRadius: '12px',
-              overflow: 'hidden',
-              boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)'
-            }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
-                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#475569' }}>N° Orden</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#475569' }}>Proveedor</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#475569' }}>Fecha Orden</th>
-                  <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700', color: '#475569' }}>Estado</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#475569' }}>Recibida</th>
-                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700', color: '#475569' }}>Observaciones</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700' }}>N° Orden</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700' }}>Proveedor</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700' }}>Fecha</th>
+                  <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700' }}>Estado</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700' }}>Recibida</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700' }}>Observaciones</th>
                 </tr>
               </thead>
               <tbody>
-                {ordenes.map((orden, index) => (
-                  <tr 
-                    key={orden.id}
-                    style={{
-                      borderBottom: index < ordenes.length - 1 ? '1px solid #f1f5f9' : 'none',
-                      transition: 'background-color 0.2s',
-                      cursor: 'default'
-                    }}
+                {ordenesFiltradas.map((orden) => (
+                  <tr key={orden.id} style={{ borderBottom: '1px solid #f1f5f9' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}
-                  >
-                    <td style={{ padding: '16px', fontWeight: '600', color: '#667eea' }}>
-                      {orden.numero_orden}
-                    </td>
-                    <td style={{ padding: '16px', color: '#334155' }}>
-                      <div style={{ fontWeight: '500' }}>{orden.proveedor}</div>
-                    </td>
-                    <td style={{ padding: '16px', color: '#334155' }}>
-                      {new Date(orden.fecha_orden).toLocaleDateString('es-CL')}
-                    </td>
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}>
+                    <td style={{ padding: '16px', fontWeight: '600', color: '#667eea' }}>{orden.numero_orden}</td>
+                    <td style={{ padding: '16px', color: '#334155', fontWeight: '500' }}>{orden.proveedor}</td>
+                    <td style={{ padding: '16px', color: '#334155' }}>{new Date(orden.fecha_orden).toLocaleDateString('es-CL')}</td>
                     <td style={{ padding: '16px', textAlign: 'center' }}>
-                      {getEstadoBadge(orden.estado)}
+                      <Badge variant={getEstadoVariant(orden.estado)}>{orden.estado}</Badge>
                     </td>
                     <td style={{ padding: '16px', color: '#64748b', fontSize: '13px' }}>
                       {new Date(orden.fecha_recepcion).toLocaleDateString('es-CL')}
                     </td>
                     <td style={{ padding: '16px', color: '#64748b', fontSize: '13px', maxWidth: '200px' }}>
-                      <div style={{ 
-                        whiteSpace: 'nowrap', 
-                        overflow: 'hidden', 
-                        textOverflow: 'ellipsis'
-                      }}>
+                      <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {orden.observaciones || '-'}
                       </div>
                     </td>
@@ -185,15 +165,12 @@ export default function ListarOrdenesCompra() {
             </table>
           </div>
 
-          <div className="help-box" style={{ marginTop: '24px' }}>
-            <h3>💡 Información</h3>
-            <ul>
-              <li><strong>OC Pendientes:</strong> Esperan recepción de mercadería</li>
-              <li><strong>Recepcionadas:</strong> La mercadería ya fue registrada en el sistema</li>
-              <li><strong>Proceso:</strong> Registrar recepción → Confirmar ingreso a Inventario</li>
-              <li>Las órdenes llegan automáticamente desde el ERP de Compras</li>
-            </ul>
-          </div>
+          <InfoBox title="💡 Información" variant="tip">
+            <strong>OC Pendientes:</strong> Esperan recepción de mercadería<br />
+            <strong>Recepcionadas:</strong> La mercadería ya fue registrada en el sistema<br />
+            <strong>Proceso:</strong> Registrar recepción → Confirmar ingreso a Inventario<br />
+            Las órdenes llegan automáticamente desde el ERP de Compras
+          </InfoBox>
         </>
       )}
     </div>

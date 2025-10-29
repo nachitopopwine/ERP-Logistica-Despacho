@@ -5,6 +5,8 @@ import ListarOrdenesPicking from './pages/ListarOrdenesPicking';
 import ListarGuiasDespacho from './pages/ListarGuiasDespacho';
 import ListarPedidosVentas from './pages/ListarPedidosVentas';
 import ListarOrdenesCompra from './pages/ListarOrdenesCompra';
+import ProcesarPedidoAutomatico from './pages/ProcesarPedidoAutomatico';
+import EstadisticasBalanceo from './pages/EstadisticasBalanceo';
 import './App.css';
 
 function App() {
@@ -74,7 +76,43 @@ function App() {
               margin: '0 4px'
             }}></div>
 
-            {/* SECCIÓN: PROCESAR */}
+            {/* SECCIÓN: AUTOMATIZACIÓN */}
+            <Link to="/procesar-automatico" style={{ 
+              color: 'white', 
+              textDecoration: 'none', 
+              padding: '10px 20px', 
+              background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+              borderRadius: '8px',
+              fontWeight: '600',
+              fontSize: '14px',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+            }}>
+              🤖 Procesar Auto
+            </Link>
+            <Link to="/estadisticas" style={{ 
+              color: 'white', 
+              textDecoration: 'none', 
+              padding: '10px 20px', 
+              background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+              borderRadius: '8px',
+              fontWeight: '600',
+              fontSize: '14px',
+              transition: 'all 0.3s ease',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
+            }}>
+              📊 Balanceo
+            </Link>
+
+            {/* SEPARADOR */}
+            <div style={{ 
+              width: '2px', 
+              height: '24px', 
+              background: 'rgba(102, 126, 234, 0.3)',
+              margin: '0 4px'
+            }}></div>
+
+            {/* SECCIÓN: PROCESAR MANUAL */}
             <Link to="/" style={{ 
               color: 'white', 
               textDecoration: 'none', 
@@ -145,6 +183,10 @@ function App() {
             {/* INTEGRACIÓN - Recibir de otros ERPs */}
             <Route path="/listar-pedidos-ventas" element={<ListarPedidosVentas />} />
             <Route path="/listar-ordenes-compra" element={<ListarOrdenesCompra />} />
+            
+            {/* AUTOMATIZACIÓN - Procesamiento automático */}
+            <Route path="/procesar-automatico" element={<ProcesarPedidoAutomatico />} />
+            <Route path="/estadisticas" element={<EstadisticasBalanceo />} />
             
             {/* PROCESAR - Crear documentos */}
             <Route path="/" element={<CrearOrdenPicking />} />

@@ -9,6 +9,7 @@ import despachoRoutes from './routes/despacho.routes';
 import recepcionRoutes from './routes/recepcion.routes';
 import integracionRoutes from './routes/integracion.routes';
 import recursosRoutes from './routes/recursos.routes';
+import automatizacionRoutes from './routes/automatizacion.routes';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -57,6 +58,7 @@ app.use('/api/despacho', despachoRoutes);
 app.use('/api/recepcion', recepcionRoutes);
 app.use('/api/integracion', integracionRoutes);
 app.use('/api/recursos', recursosRoutes);
+app.use('/api/automatizacion', automatizacionRoutes);
 
 // Ruta 404
 app.use((req: Request, res: Response) => {
@@ -89,7 +91,9 @@ const startServer = async () => {
       console.log(`   - GET  /api/recepcion`);
       console.log(`   - POST /api/recepcion`);
       console.log(`   - GET  /api/integracion/pedidos-ventas`);
-      console.log(`   - GET  /api/integracion/ordenes-compra\n`);
+      console.log(`   - GET  /api/integracion/ordenes-compra`);
+      console.log(`   - POST /api/automatizacion/procesar-pedido 🤖`);
+      console.log(`   - GET  /api/automatizacion/estadisticas-balanceo\n`);
     });
   } catch (error) {
     console.error('❌ Error al iniciar el servidor:', error);

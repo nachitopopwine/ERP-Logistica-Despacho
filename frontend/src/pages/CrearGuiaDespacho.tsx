@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { despachoService } from '../services/despachoService';
 import { pickingService } from '../services/pickingService';
 import { recursosService } from '../services/recursosService';
+import AlertMessage from '../components/common/AlertMessage';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import type { CreateGuiaDespacho, OrdenPicking, Transportista } from '../types';
 
 const CrearGuiaDespacho: React.FC = () => {
@@ -159,10 +161,14 @@ const CrearGuiaDespacho: React.FC = () => {
       <h1>🚚 Crear Guía de Despacho</h1>
       
       {mensaje && (
-        <div className={mensaje.tipo === 'success' ? 'message-success' : 'message-error'}>
-          {mensaje.texto}
-        </div>
+        <AlertMessage 
+          type={mensaje.tipo}
+          message={mensaje.texto}
+          onClose={() => setMensaje(null)}
+        />
       )}
+
+      {loading && <LoadingSpinner message="Creando guía de despacho..." />}
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         

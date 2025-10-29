@@ -2,6 +2,14 @@ import { useState, useEffect } from 'react';
 import { pickingService } from '../services/pickingService';
 import { integracionService } from '../services/integracionService';
 import { recursosService } from '../services/recursosService';
+import AlertMessage from '../components/common/AlertMessage';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import SelectField from '../components/common/SelectField';
+import FormField from '../components/common/FormField';
+import Button from '../components/common/Button';
+import InfoBox from '../components/common/InfoBox';
+import Card from '../components/common/Card';
+import PageHeader from '../components/common/PageHeader';
 import type { CreateOrdenPicking, PedidoVenta, Empleado } from '../types';
 
 export default function CrearOrdenPicking() {
@@ -102,57 +110,55 @@ export default function CrearOrdenPicking() {
 
   return (
     <div className="form-container">
-      <h1>📦 Crear Orden de Trabajo de Picking</h1>
+      <PageHeader 
+        title="Crear Orden de Trabajo de Picking"
+        subtitle="Asigna un empleado a un pedido pendiente"
+        icon="📦"
+      />
       
       {message && (
-        <div className={message.type === 'success' ? 'message-success' : 'message-error'}>
-          {message.text}
-        </div>
+        <AlertMessage 
+          type={message.type}
+          message={message.text}
+          onClose={() => setMessage(null)}
+        />
       )}
+
+      {loading && <LoadingSpinner message="Creando orden de trabajo..." />}
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         
         {/* SELECTOR DE PEDIDO */}
-        <div style={{ 
-          background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)', 
-          padding: '20px', 
-          borderRadius: '12px',
-          border: '2px solid #667eea30'
-        }}>
-          <label htmlFor="pedido" style={{ fontSize: '16px', fontWeight: '600', marginBottom: '12px', display: 'block' }}>
-            📦 Seleccionar Pedido de Venta
-          </label>
-          <select
-            id="pedido"
-            onChange={(e) => handlePedidoChange(e.target.value)}
-            disabled={loadingPedidos}
-            style={{ fontSize: '15px' }}
-          >
-            <option value="">-- Selecciona un pedido pendiente --</option>
-            {pedidosDisponibles.map(pedido => (
-              <option key={pedido.id} value={pedido.id}>
-                {pedido.numero_pedido} - {pedido.cliente} - {pedido.direccion_despacho}
-              </option>
-            ))}
-          </select>
+        <Card 
+          title="📦 Seleccionar Pedido de Venta"
+          style={{ 
+            background: 'linear-gradient(135deg, #667eea15 0%, #764ba215 100%)',
+            border: '2px solid #667eea30'
+          }}
+        >
+          <SelectField
+            label=""
+            name="pedido"
+            value=""
+            onChange={handlePedidoChange}
+            options={pedidosDisponibles.map(p => ({
+              value: p.id,
+              label: `${p.numero_pedido} - ${p.cliente} - ${p.direccion_despacho}`
+            }))}
+            placeholder="-- Selecciona un pedido pendiente --"
+            loading={loadingPedidos}
+          />
           
           {pedidoSeleccionado && (
-            <div style={{ 
-              marginTop: '15px', 
-              padding: '15px', 
-              background: 'white',
-              borderRadius: '8px',
-              border: '1px solid #e2e8f0'
-            }}>
-              <h4 style={{ margin: '0 0 10px 0', color: '#667eea' }}>📋 Detalles del Pedido</h4>
-              <div style={{ display: 'grid', gap: '8px', fontSize: '14px' }}>
+            <InfoBox title="📋 Detalles del Pedido" variant="info">
+              <div style={{ display: 'grid', gap: '8px' }}>
                 <div><strong>N° Pedido:</strong> {pedidoSeleccionado.numero_pedido}</div>
                 <div><strong>Cliente:</strong> {pedidoSeleccionado.cliente}</div>
                 <div style={{ 
                   background: '#f7fafc', 
                   padding: '10px', 
                   borderRadius: '6px',
-                  border: '1px solid #667eea40'
+                  marginTop: '8px'
                 }}>
                   <strong>📍 Dirección de Despacho:</strong><br/>
                   <span style={{ color: '#2d3748', fontSize: '15px' }}>
@@ -161,88 +167,78 @@ export default function CrearOrdenPicking() {
                 </div>
                 <div><strong>Fecha Pedido:</strong> {new Date(pedidoSeleccionado.fecha_pedido).toLocaleDateString()}</div>
               </div>
-            </div>
+            </InfoBox>
           )}
-        </div>
+        </Card>
 
-        <div>
-          <label htmlFor="id_empleado">
-            👤 Empleado Responsable *
-          </label>
-          <select
-            id="id_empleado"
-            value={formData.id_empleado || ''}
-            onChange={(e) => setFormData({ ...formData, id_empleado: Number(e.target.value) })}
-            required
-            disabled={loadingEmpleados}
-            style={{ fontSize: '15px' }}
-          >
-            <option value="">-- Selecciona un empleado --</option>
-            {empleados.map(emp => (
-              <option key={emp.id} value={emp.id}>
-                {emp.nombre} {emp.apellido} - {emp.rol}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          label="👤 Empleado Responsable"
+          name="id_empleado"
+          value={formData.id_empleado || ''}
+          onChange={(value) => setFormData({ ...formData, id_empleado: Number(value) })}
+          options={empleados.map(e => ({
+            value: e.id,
+            label: `${e.nombre} ${e.apellido} - ${e.rol}`
+          }))}
+          placeholder="-- Selecciona un empleado --"
+          required
+          loading={loadingEmpleados}
+        />
 
-        <div>
-          <label htmlFor="fecha">
-            Fecha de la Orden *
-          </label>
-          <input
-            type="date"
-            id="fecha"
-            value={formData.fecha}
-            onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-            required
-          />
-        </div>
+        <FormField
+          label="📅 Fecha de la Orden"
+          type="date"
+          name="fecha"
+          value={formData.fecha}
+          onChange={(value) => setFormData({ ...formData, fecha: value })}
+          required
+        />
 
-        <div>
-          <label htmlFor="estado">
-            Estado Inicial *
-          </label>
-          <select
-            id="estado"
-            value={formData.estado}
-            onChange={(e) => setFormData({ ...formData, estado: e.target.value })}
-          >
-            <option value="PENDIENTE">⏳ Pendiente</option>
-            <option value="EN_PROCESO">🔄 En Proceso</option>
-            <option value="COMPLETADA">✅ Completada</option>
-            <option value="CANCELADA">❌ Cancelada</option>
-          </select>
-        </div>
+        <SelectField
+          label="📊 Estado Inicial"
+          name="estado"
+          value={formData.estado || 'PENDIENTE'}
+          onChange={(value) => setFormData({ ...formData, estado: value })}
+          options={[
+            { value: 'PENDIENTE', label: '⏳ Pendiente' },
+            { value: 'EN_PROCESO', label: '🔄 En Proceso' },
+            { value: 'COMPLETADA', label: '✅ Completada' },
+            { value: 'CANCELADA', label: '❌ Cancelada' }
+          ]}
+          required
+        />
 
-        <div>
-          <label htmlFor="observaciones">
-            Observaciones
-          </label>
-          <textarea
-            id="observaciones"
-            value={formData.observaciones}
-            onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-            rows={4}
-            placeholder="Agrega notas o comentarios sobre esta orden de picking..."
-            style={{ resize: 'vertical' }}
-          />
-        </div>
+        <FormField
+          label="📝 Observaciones"
+          type="textarea"
+          name="observaciones"
+          value={formData.observaciones || ''}
+          onChange={(value) => setFormData({ ...formData, observaciones: value })}
+          placeholder="Agrega notas o comentarios sobre esta orden de picking..."
+          rows={4}
+        />
 
-        <button type="submit" disabled={loading}>
-          {loading ? '⏳ Creando orden...' : '✨ Crear Orden de Picking'}
-        </button>
+        <Button 
+          type="submit" 
+          disabled={loading}
+          loading={loading}
+          icon="✨"
+          size="large"
+          fullWidth
+        >
+          Crear Orden de Picking
+        </Button>
       </form>
 
-      <div className="help-box">
-        <h3>💡 Información de Ayuda</h3>
-        <ul>
-          <li><strong>ID Empleado:</strong> Debe ser un empleado existente en el sistema (1-12)</li>
+      <InfoBox title="Información de Ayuda" variant="tip">
+        <ul style={{ margin: 0, paddingLeft: '20px' }}>
+          <li><strong>Pedido:</strong> Selecciona un pedido pendiente para procesar</li>
+          <li><strong>Empleado:</strong> Asigna un empleado responsable del picking</li>
           <li><strong>Estado:</strong> Normalmente inicia como "Pendiente"</li>
-          <li><strong>Observaciones:</strong> Campo opcional para notas adicionales</li>
+          <li><strong>Observaciones:</strong> Se auto-completan con datos del pedido</li>
           <li>Una vez creada, podrás ver la orden en "📊 Listar OT"</li>
         </ul>
-      </div>
+      </InfoBox>
     </div>
   );
 }
