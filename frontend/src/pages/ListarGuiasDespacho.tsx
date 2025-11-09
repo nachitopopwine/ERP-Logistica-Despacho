@@ -1,84 +1,76 @@
 import React, { useState, useEffect } from "react";
 import { despachoService } from "../services/despachoService";
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import EmptyState from '../components/common/EmptyState';
+import AlertMessage from '../components/common/AlertMessage';
+import Badge from '../components/common/Badge';
+import PageHeader from '../components/common/PageHeader';
+import Button from '../components/common/Button';
+import SearchBar from '../components/common/SearchBar';
+import SelectField from '../components/common/SelectField';
+import StatsCard from '../components/common/StatsCard';
 import type { GuiaDespacho } from "../types";
 
 const ListarGuiasDespacho: React.FC = () => {
   const [guias, setGuias] = useState<GuiaDespacho[]>([]);
-  const [guiasFiltradas, setGuiasFiltradas] = useState<GuiaDespacho[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Filtros
   const [busqueda, setBusqueda] = useState("");
-  const [filtroEstado, setFiltroEstado] = useState<string>("TODOS");
-  const [ordenamiento, setOrdenamiento] = useState<
-    "fecha_desc" | "fecha_asc" | "id_desc" | "id_asc"
-  >("id_desc");
+  const [filtroEstado, setFiltroEstado] = useState("TODOS");
+  const [ordenamiento, setOrdenamiento] = useState<"fecha_desc" | "fecha_asc" | "id_desc" | "id_asc">("id_desc");
 
-  useEffect(() => {
-    cargarGuias();
-  }, []);
-
-  useEffect(() => {
-    aplicarFiltros();
-  }, [guias, busqueda, filtroEstado, ordenamiento]);
+  useEffect(() => { cargarGuias(); }, []);
 
   const cargarGuias = async () => {
     try {
       setLoading(true);
       const response = await despachoService.getAll();
-
-      if (response.success && response.data) {
-        setGuias(response.data);
-      } else {
-        setError("No se pudieron cargar las guías");
-      }
+      if (response.success && response.data) setGuias(response.data);
+      else setError("No se pudieron cargar las guías");
     } catch (err: any) {
-      console.error("Error al cargar guías:", err);
       setError(err.message || "Error al conectar con el servidor");
     } finally {
       setLoading(false);
     }
   };
 
-  const aplicarFiltros = () => {
-    let resultado = [...guias];
+  const contarPorEstado = (estado: string) => guias.filter(g => g.estado_ot === estado).length;
 
-    // Filtro por búsqueda (ID guía, ID OT, transportista, dirección)
+  const guiasFiltradas = React.useMemo(() => {
+    let resultado = [...guias];
+    
     if (busqueda.trim()) {
-      const busquedaLower = busqueda.toLowerCase();
-      resultado = resultado.filter(
-        (guia) =>
-          guia.id_guia.toString().includes(busquedaLower) ||
-          guia.id_ot.toString().includes(busquedaLower) ||
-          guia.transportista.toLowerCase().includes(busquedaLower) ||
-          (guia.direccion_entrega &&
-            guia.direccion_entrega.toLowerCase().includes(busquedaLower))
+      const lower = busqueda.toLowerCase();
+      resultado = resultado.filter(g =>
+        g.id_guia.toString().includes(lower) ||
+        g.id_ot.toString().includes(lower) ||
+        g.transportista.toLowerCase().includes(lower) ||
+        g.direccion_entrega?.toLowerCase().includes(lower)
       );
     }
 
-    // Filtro por estado de OT
-    if (filtroEstado !== "TODOS") {
-      resultado = resultado.filter((guia) => guia.estado_ot === filtroEstado);
-    }
+    if (filtroEstado !== "TODOS") resultado = resultado.filter(g => g.estado_ot === filtroEstado);
 
-    // Ordenamiento
     resultado.sort((a, b) => {
       switch (ordenamiento) {
-        case "fecha_desc":
-          return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
-        case "fecha_asc":
-          return new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
-        case "id_desc":
-          return b.id_guia - a.id_guia;
-        case "id_asc":
-          return a.id_guia - b.id_guia;
-        default:
-          return 0;
+        case "fecha_desc": return new Date(b.fecha).getTime() - new Date(a.fecha).getTime();
+        case "fecha_asc": return new Date(a.fecha).getTime() - new Date(b.fecha).getTime();
+        case "id_desc": return b.id_guia - a.id_guia;
+        case "id_asc": return a.id_guia - b.id_guia;
+        default: return 0;
       }
     });
 
-    setGuiasFiltradas(resultado);
+    return resultado;
+  }, [guias, busqueda, filtroEstado, ordenamiento]);
+
+  const getEstadoVariant = (estado?: string): 'pendiente' | 'proceso' | 'completado' | 'cancelado' | 'enviado' => {
+    if (!estado) return 'pendiente';
+    if (estado === 'Pendiente' || estado === 'PENDIENTE') return 'pendiente';
+    if (estado === 'En proceso' || estado === 'EN_PROCESO') return 'proceso';
+    if (estado === 'Completado' || estado === 'COMPLETADA') return 'completado';
+    if (estado === 'Enviado') return 'enviado';
+    return 'cancelado';
   };
 
   const limpiarFiltros = () => {
@@ -87,299 +79,94 @@ const ListarGuiasDespacho: React.FC = () => {
     setOrdenamiento("id_desc");
   };
 
-  const getEstadoBadge = (estado?: string) => {
-    if (!estado) return "badge";
-
-    const clases: { [key: string]: string } = {
-      PENDIENTE: "badge badge-pendiente",
-      EN_PROCESO: "badge badge-proceso",
-      COMPLETADA: "badge badge-completada",
-      CANCELADA: "badge badge-cancelada",
-    };
-    return clases[estado] || "badge";
-  };
-
-  const contarPorEstado = (estado: string) => {
-    return guias.filter((g) => g.estado_ot === estado).length;
-  };
-
-  if (loading) {
-    return (
-      <div className="list-container">
-        <div style={{ textAlign: "center", padding: "60px" }}>
-          <h2 style={{ color: "#667eea" }}>⏳ Cargando guías de despacho...</h2>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <div className="list-container"><LoadingSpinner message="Cargando guías de despacho..." size="large" /></div>;
 
   if (error) {
     return (
       <div className="list-container">
-        <div style={{ textAlign: "center", padding: "60px" }}>
-          <h2 style={{ color: "#ef4444", marginBottom: "20px" }}>
-            ❌ Error: {error}
-          </h2>
-          <button onClick={cargarGuias} className="btn-refresh">
-            🔄 Reintentar
-          </button>
-        </div>
+        <AlertMessage type="error" message={error} onClose={() => setError(null)} />
+        <EmptyState icon="❌" title="Error al cargar guías" description={error} actionLabel="🔄 Reintentar" onAction={cargarGuias} />
       </div>
     );
   }
 
   return (
     <div className="list-container">
-      <div className="list-header">
-        <h1>📋 Guías de Despacho</h1>
-        <button onClick={cargarGuias} className="btn-refresh">
-          🔄 Actualizar
-        </button>
+      <PageHeader 
+        title="Guías de Despacho"
+        subtitle={`${guias.length} guías registradas`}
+        icon="🚚"
+        actions={<Button onClick={cargarGuias} icon="🔄" variant="secondary">Actualizar</Button>}
+      />
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <StatsCard title="Pendientes" value={contarPorEstado('Pendiente')} icon="⏳" color="yellow" subtitle="Por despachar" />
+        <StatsCard title="En Proceso" value={contarPorEstado('En proceso')} icon="🔄" color="blue" subtitle="En ruta" />
+        <StatsCard title="Completadas" value={contarPorEstado('Completado')} icon="✅" color="green" subtitle="Entregadas" />
       </div>
 
-      {/* Panel de Filtros */}
-      <div
-        style={{
-          background: "white",
-          padding: "20px",
-          borderRadius: "12px",
-          marginBottom: "20px",
-          border: "2px solid #e2e8f0",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
-        }}
-      >
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-            gap: "16px",
-            marginBottom: "16px",
-          }}
-        >
-          {/* Búsqueda */}
-          <div>
-            <label
-              htmlFor="busqueda"
-              style={{
-                display: "block",
-                marginBottom: "8px",
-                fontWeight: "600",
-                color: "#4a5568",
-                fontSize: "14px",
-              }}
-            >
-              🔍 Buscar
-            </label>
-            <input
-              type="text"
-              id="busqueda"
-              placeholder="ID guía, OT, transportista, dirección..."
-              value={busqueda}
-              onChange={(e) => setBusqueda(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "2px solid #e2e8f0",
-                borderRadius: "8px",
-                fontSize: "14px",
-              }}
-            />
-          </div>
-
-          {/* Filtro por Estado de OT */}
-          <div>
-            <label
-              htmlFor="filtroEstado"
-              style={{
-                display: "block",
-                marginBottom: "8px",
-                fontWeight: "600",
-                color: "#4a5568",
-                fontSize: "14px",
-              }}
-            >
-              📋 Estado de OT
-            </label>
-            <select
-              id="filtroEstado"
-              value={filtroEstado}
-              onChange={(e) => setFiltroEstado(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "2px solid #e2e8f0",
-                borderRadius: "8px",
-                fontSize: "14px",
-              }}
-            >
-              <option value="TODOS">Todos ({guias.length})</option>
-              <option value="Pendiente">
-                ⏳ Pendiente ({contarPorEstado("Pendiente")})
-              </option>
-              <option value="En proceso">
-                🔄 En Proceso ({contarPorEstado("En proceso")})
-              </option>
-              <option value="Completado">
-                ✅ Completada ({contarPorEstado("Completado")})
-              </option>
-              <option value="Cancelado">
-                ❌ Cancelada ({contarPorEstado("Cancelado")})
-              </option>
-            </select>
-          </div>
-
-          {/* Ordenamiento */}
-          <div>
-            <label
-              htmlFor="ordenamiento"
-              style={{
-                display: "block",
-                marginBottom: "8px",
-                fontWeight: "600",
-                color: "#4a5568",
-                fontSize: "14px",
-              }}
-            >
-              ↕️ Ordenar por
-            </label>
-            <select
-              id="ordenamiento"
-              value={ordenamiento}
-              onChange={(e) => setOrdenamiento(e.target.value as any)}
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                border: "2px solid #e2e8f0",
-                borderRadius: "8px",
-                fontSize: "14px",
-              }}
-            >
-              <option value="id_desc">ID Guía (Mayor a Menor)</option>
-              <option value="id_asc">ID Guía (Menor a Mayor)</option>
-              <option value="fecha_desc">Fecha (Más Reciente)</option>
-              <option value="fecha_asc">Fecha (Más Antigua)</option>
-            </select>
-          </div>
+      <div style={{ background: 'white', padding: '20px', borderRadius: '12px', marginBottom: '20px', border: '2px solid #e2e8f0' }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "16px", marginBottom: '16px' }}>
+          <SearchBar value={busqueda} onChange={setBusqueda} placeholder="ID guía, OT, transportista, dirección..." />
+          <SelectField label="" name="estado" value={filtroEstado} onChange={setFiltroEstado} options={[
+            { value: 'TODOS', label: `📋 Todos (${guias.length})` },
+            { value: 'Pendiente', label: `⏳ Pendiente (${contarPorEstado('Pendiente')})` },
+            { value: 'En proceso', label: `🔄 En proceso (${contarPorEstado('En proceso')})` },
+            { value: 'Completado', label: `✅ Completado (${contarPorEstado('Completado')})` }
+          ]} />
+          <SelectField label="" name="orden" value={ordenamiento} onChange={(v) => setOrdenamiento(v as typeof ordenamiento)} options={[
+            { value: 'id_desc', label: '🔢 ID: Mayor a menor' },
+            { value: 'id_asc', label: '🔢 ID: Menor a mayor' },
+            { value: 'fecha_desc', label: '📅 Fecha: Reciente' },
+            { value: 'fecha_asc', label: '📅 Fecha: Antiguo' }
+          ]} />
         </div>
-
-        {/* Botón Limpiar Filtros */}
-        {(busqueda ||
-          filtroEstado !== "TODOS" ||
-          ordenamiento !== "id_desc") && (
-          <button
-            onClick={limpiarFiltros}
-            style={{
-              padding: "8px 16px",
-              background: "#e2e8f0",
-              color: "#4a5568",
-              border: "none",
-              borderRadius: "6px",
-              fontSize: "14px",
-              fontWeight: "600",
-              cursor: "pointer",
-              transition: "all 0.2s",
-            }}
-            onMouseOver={(e) => (e.currentTarget.style.background = "#cbd5e0")}
-            onMouseOut={(e) => (e.currentTarget.style.background = "#e2e8f0")}
-          >
-            🗑️ Limpiar Filtros
-          </button>
+        {(busqueda || filtroEstado !== "TODOS" || ordenamiento !== "id_desc") && (
+          <Button onClick={limpiarFiltros} variant="ghost" size="small" icon="🗑️">Limpiar filtros</Button>
         )}
       </div>
 
-      {guias.length === 0 ? (
-        <div className="empty-state">
-          <h3>No hay guías de despacho registradas</h3>
-          <p>Crea una nueva guía desde el formulario "🚚 Crear Guía"</p>
-        </div>
-      ) : guiasFiltradas.length === 0 ? (
-        <div className="empty-state">
-          <h3>No se encontraron resultados</h3>
-          <p>Intenta ajustar los filtros de búsqueda</p>
-          <button
-            onClick={limpiarFiltros}
-            style={{
-              marginTop: "16px",
-              padding: "10px 20px",
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-              color: "white",
-              border: "none",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: "600",
-              cursor: "pointer",
-            }}
-          >
-            Limpiar Filtros
-          </button>
-        </div>
+      {guiasFiltradas.length === 0 ? (
+        <EmptyState icon="🚚" title="No hay guías" description="No se encontraron guías con los filtros aplicados" actionLabel="🗑️ Limpiar filtros" onAction={limpiarFiltros} />
       ) : (
         <>
-          <div className="info-box">
-            <strong>
-              📦 Mostrando {guiasFiltradas.length} de {guias.length} guías
-            </strong>
-          </div>
-
-          <div style={{ overflowX: "auto" }}>
-            <table>
+          <p style={{ color: '#64748b', marginBottom: '16px' }}>📈 Mostrando {guiasFiltradas.length} de {guias.length} guías</p>
+          
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', backgroundColor: 'white', borderRadius: '12px', overflow: 'hidden' }}>
               <thead>
-                <tr>
-                  <th style={{ width: "100px" }}>ID GUÍA</th>
-                  <th style={{ width: "100px" }}>OT</th>
-                  <th style={{ width: "140px" }}>FECHA</th>
-                  <th>TRANSPORTISTA</th>
-                  <th>DIRECCIÓN</th>
-                  <th style={{ width: "150px" }}>ESTADO OT</th>
+                <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700' }}>ID Guía</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700' }}>ID OT</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700' }}>Fecha</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700' }}>Transportista</th>
+                  <th style={{ padding: '16px', textAlign: 'left', fontWeight: '700' }}>Dirección</th>
+                  <th style={{ padding: '16px', textAlign: 'center', fontWeight: '700' }}>Estado OT</th>
                 </tr>
               </thead>
               <tbody>
                 {guiasFiltradas.map((guia) => (
-                  <tr key={guia.id_guia}>
-                    <td
-                      style={{
-                        fontWeight: "bold",
-                        color: "#667eea",
-                        fontSize: "16px",
-                      }}
-                    >
-                      #{guia.id_guia}
-                    </td>
-                    <td
-                      style={{
-                        fontWeight: "bold",
-                        color: "#764ba2",
-                        fontSize: "15px",
-                      }}
-                    >
-                      OT #{guia.id_ot}
-                    </td>
-                    <td style={{ color: "#4a5568" }}>
-                      {new Date(guia.fecha).toLocaleDateString("es-CL", {
-                        day: "2-digit",
-                        month: "2-digit",
-                        year: "numeric",
-                      })}
-                    </td>
-                    <td style={{ color: "#2d3748", fontWeight: "500" }}>
-                      {guia.transportista}
-                    </td>
-                    <td style={{ maxWidth: "250px", color: "#4a5568" }}>
-                      {guia.direccion_entrega || (
-                        <span style={{ color: "#a0aec0", fontStyle: "italic" }}>
-                          No especificada
-                        </span>
+                  <tr key={guia.id_guia} style={{ borderBottom: '1px solid #f1f5f9' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}>
+                    <td style={{ padding: '16px', fontWeight: '600', color: '#667eea' }}>Guía #{guia.id_guia}</td>
+                    <td style={{ padding: '16px', color: '#334155' }}>OT #{guia.id_ot}</td>
+                    <td style={{ padding: '16px', color: '#334155' }}>{new Date(guia.fecha).toLocaleDateString('es-CL')}</td>
+                    <td style={{ padding: '16px', color: '#334155' }}>🚛 {guia.transportista}</td>
+                    <td style={{ padding: '16px', color: '#4a5568', maxWidth: '250px' }}>
+                      {guia.direccion_entrega ? (
+                        <div style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          📍 {guia.direccion_entrega}
+                        </div>
+                      ) : (
+                        <span style={{ color: '#a0aec0', fontStyle: 'italic' }}>Sin dirección</span>
                       )}
                     </td>
-                    <td>
+                    <td style={{ padding: '16px', textAlign: 'center' }}>
                       {guia.estado_ot ? (
-                        <span className={getEstadoBadge(guia.estado_ot)}>
-                          {guia.estado_ot}
-                        </span>
+                        <Badge variant={getEstadoVariant(guia.estado_ot)}>{guia.estado_ot}</Badge>
                       ) : (
-                        <span style={{ color: "#a0aec0", fontStyle: "italic" }}>
-                          N/A
-                        </span>
+                        <span style={{ color: '#a0aec0', fontStyle: 'italic' }}>N/A</span>
                       )}
                     </td>
                   </tr>

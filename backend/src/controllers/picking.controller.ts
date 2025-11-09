@@ -127,7 +127,7 @@ export const createOrdenPicking = async (
       VALUES ($1, $2, $3, $4)
       RETURNING *
     `,
-      [id_empleado, fecha, estado || "PENDIENTE", observaciones || null]
+      [id_empleado, fecha, estado || "Pendiente", observaciones || null]
     );
 
     res.status(201).json({
