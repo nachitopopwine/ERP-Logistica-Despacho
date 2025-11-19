@@ -10,9 +10,9 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #1a1a1a; /* Dark base color */
   min-height: 100vh;
-  color: #2d3748;
+  color: #000000; /* Black text for white backgrounds */
 }
 
 .app {
@@ -24,23 +24,21 @@ body {
 
 /* Navegación - Ahora ocupa todo el ancho */
 nav {
-  background: rgba(255, 255, 255, 0.95) !important;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-bottom: 3px solid #667eea;
+  background: #ffffff; /* White background */
+  border-bottom: 3px solid #000000; /* Adjusted border color */
   width: 100%;
   padding: 0 20px;
 }
 
 nav h1 {
-  color: #667eea !important;
+  color: #000000; /* Black text */
   font-weight: 700;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 nav a {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  color: white !important;
+  background: #333333; /* Dark gray background */
+  color: #ffffff; /* White text */
   font-weight: 600;
   transition: all 0.3s ease;
   border: none !important;
@@ -60,17 +58,20 @@ nav a:hover {
   align-items: center;
   padding: 20px;
   width: 100%;
+  background: #1a1a1a; /* Dark background */
+  color: #f5f5f5; /* Light text */
 }
 
 /* Contenedores de formularios - Centrados */
 .form-container {
-  background: white;
+  background: #ffffff; /* White background */
   border-radius: 16px;
   padding: 32px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   max-width: 700px;
   width: 100%;
   margin: 20px auto;
+  color: #000000; /* Black text for white backgrounds */
 }
 
 /* Títulos */
@@ -82,8 +83,8 @@ h1, h2, h3, h4, h5, h6 {
 h1 {
   font-size: 28px;
   margin-bottom: 24px;
-  color: #667eea;
-  border-bottom: 3px solid #667eea;
+  color: #000000;
+  border-bottom: 3px solid #000000;
   padding-bottom: 12px;
 }
 
@@ -111,7 +112,7 @@ input, select, textarea {
 
 input:focus, select:focus, textarea:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: #000000;
   background: white;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
@@ -122,8 +123,8 @@ input::placeholder, textarea::placeholder {
 
 /* Botones */
 button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: #000000; /* Black for primary buttons */
+  color: #ffffff; /* White text */
   border: none;
   padding: 14px 28px;
   font-size: 16px;
@@ -131,13 +132,13 @@ button {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   width: 100%;
 }
 
 button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6);
 }
 
 button:active:not(:disabled) {
@@ -145,15 +146,16 @@ button:active:not(:disabled) {
 }
 
 button:disabled {
-  background: #cbd5e0;
+  background: #808080; /* Gray for disabled buttons */
+  color: #d3d3d3; /* Light gray text */
   cursor: not-allowed;
   box-shadow: none;
 }
 
 /* Mensajes de éxito/error */
 .message-success {
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-  color: white;
+  background: #48bb78; /* Green success */
+  color: #ffffff; /* White text */
   padding: 16px 20px;
   border-radius: 8px;
   margin-bottom: 24px;
@@ -163,8 +165,8 @@ button:disabled {
 }
 
 .message-error {
-  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
-  color: white;
+  background: #ff0000; /* Red background */
+  color: #ffffff; /* White text */
   padding: 16px 20px;
   border-radius: 8px;
   margin-bottom: 24px;
@@ -175,7 +177,8 @@ button:disabled {
 
 /* Cajas de ayuda */
 .help-box {
-  background: linear-gradient(135deg, #bee3f8 0%, #90cdf4 100%);
+  background: #ecefff; /* Dark gray */
+  color: #f5f5f5; /* Light text */
   padding: 20px;
   border-radius: 12px;
   margin-top: 24px;
@@ -204,14 +207,16 @@ button:disabled {
 /* Tablas */
 table {
   width: 100%;
-  background: white;
+  background: #ffffff; /* White background */
+  color: #1a1a1a; /* Dark text */
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
 }
 
 table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #1a1a1a; /* Dark header */
+  color: #f5f5f5; /* Light text */
 }
 
 table th {
@@ -295,7 +300,7 @@ table tbody tr:nth-child(even):hover {
   align-items: center;
   margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 3px solid #667eea;
+  border-bottom: 3px solid #000000;
 }
 
 .list-header h1 {
