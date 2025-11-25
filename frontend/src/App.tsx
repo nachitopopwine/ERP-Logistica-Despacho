@@ -1,4 +1,6 @@
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import React from "react";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
+import { useAuth } from "./utils/AuthContext";
 import CrearOrdenPicking from "./pages/CrearOrdenPicking";
 import CrearGuiaDespacho from "./pages/CrearGuiaDespacho";
 import ListarOrdenesPicking from "./pages/ListarOrdenesPicking";
@@ -8,24 +10,47 @@ import ListarOrdenesCompra from "./pages/ListarOrdenesCompra";
 import ProcesarPedidoAutomatico from "./pages/ProcesarPedidoAutomatico";
 import EstadisticasBalanceo from "./pages/EstadisticasBalanceo";
 import "./App.css";
+import Login from "./pages/Login";
+import Home from "./pages/Home";
 
 function App() {
-  /* Update button styles */
-  const buttonStyle = {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+
+  const buttonStyle: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "4px",
     color: "white",
     textDecoration: "none",
     padding: "10px 20px",
-    background: "#333333", // Dark gray background
+    background: "#333333",
     borderRadius: "8px",
     fontWeight: "600",
     fontSize: "14px",
+    border: "none",
+    cursor: "pointer",
     transition: "all 0.3s ease",
     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
   };
 
+  if (!user) {
+    // Aquí NO usamos BrowserRouter, porque ya está en main.tsx
+    return <Login />;
+  }
+
+  const isEmpleadoLogistica = user.rol === "EMPLEADO_LOGISTICA";
+  const isJefeLogistica = user.rol === "JEFE_LOGISTICA";
+  const hideNav = location.pathname === "/home";
+
+  console.log("[App] location.pathname:", location.pathname);
+  console.log("[App] user:", user);
+  console.log("[App] hideNav:", hideNav);
+
   return (
-    <BrowserRouter>
-      <div className="app">
+    <div className="app">
+      {!hideNav && (
         <nav
           style={{
             backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -59,15 +84,17 @@ function App() {
               🚚 ERP Logística
             </h1>
 
-            {/* SECCIÓN: RECIBIR */}
-            <Link to="/listar-pedidos-ventas" style={buttonStyle}>
-              � Ver Pedidos
-            </Link>
-            <Link to="/listar-ordenes-compra" style={buttonStyle}>
-              📦 Ver OC
-            </Link>
+            {(isEmpleadoLogistica || isJefeLogistica) && (
+              <>
+                <Link to="/listar-pedidos-ventas" style={buttonStyle}>
+                  � Ver Pedidos
+                </Link>
+                <Link to="/listar-ordenes-compra" style={buttonStyle}>
+                  📦 Ver OC
+                </Link>
+              </>
+            )}
 
-            {/* SEPARADOR */}
             <div
               style={{
                 width: "2px",
@@ -77,7 +104,6 @@ function App() {
               }}
             ></div>
 
-            {/* SECCIÓN: AUTOMATIZACIÓN */}
             <Link to="/procesar-automatico" style={buttonStyle}>
               🤖 Procesar Auto
             </Link>
@@ -85,7 +111,6 @@ function App() {
               📊 Balanceo
             </Link>
 
-            {/* SEPARADOR */}
             <div
               style={{
                 width: "2px",
@@ -95,15 +120,17 @@ function App() {
               }}
             ></div>
 
-            {/* SECCIÓN: PROCESAR MANUAL */}
-            <Link to="/" style={buttonStyle}>
-              📝 Crear OT
-            </Link>
-            <Link to="/guias" style={buttonStyle}>
-              🚚 Crear Guía
-            </Link>
+            {isJefeLogistica && (
+              <>
+                <Link to="/" style={buttonStyle}>
+                  📝 Crear OT
+                </Link>
+                <Link to="/guias" style={buttonStyle}>
+                  🚚 Crear Guía
+                </Link>
+              </>
+            )}
 
-            {/* SEPARADOR */}
             <div
               style={{
                 width: "2px",
@@ -113,46 +140,67 @@ function App() {
               }}
             ></div>
 
-            {/* SECCIÓN: CONSULTAR */}
-            <Link to="/listar-picking" style={buttonStyle}>
-              📊 Listar OT
-            </Link>
-            <Link to="/listar-guias" style={buttonStyle}>
-              📋 Listar Guías
+            {(isEmpleadoLogistica || isJefeLogistica) && (
+              <>
+                <Link to="/listar-picking" style={buttonStyle}>
+                  📊 Listar OT
+                </Link>
+                <Link to="/listar-guias" style={buttonStyle}>
+                  📋 Listar Guías
+                </Link>
+              </>
+            )}
+
+            {isJefeLogistica && (
+              <Link
+                to="#"
+                style={buttonStyle}
+                onClick={(e) => {
+                  e.preventDefault();
+                  alert("Dashboard próximamente en desarrollo");
+                }}
+              >
+                📈 Dashboard
+              </Link>
+            )}
+
+            <Link
+              to="/home"
+              style={buttonStyle}
+              onClick={(e) => {
+                e.preventDefault();
+                logout();
+              }}
+            >
+              🚪 Cerrar sesión
             </Link>
           </div>
         </nav>
+      )}
 
-        <div style={{ padding: "32px 20px" }}>
-          <Routes>
-            {/* INTEGRACIÓN - Recibir de otros ERPs */}
-            <Route
-              path="/listar-pedidos-ventas"
-              element={<ListarPedidosVentas />}
-            />
-            <Route
-              path="/listar-ordenes-compra"
-              element={<ListarOrdenesCompra />}
-            />
-
-            {/* AUTOMATIZACIÓN - Procesamiento automático */}
-            <Route
-              path="/procesar-automatico"
-              element={<ProcesarPedidoAutomatico />}
-            />
-            <Route path="/estadisticas" element={<EstadisticasBalanceo />} />
-
-            {/* PROCESAR - Crear documentos */}
-            <Route path="/" element={<CrearOrdenPicking />} />
-            <Route path="/guias" element={<CrearGuiaDespacho />} />
-
-            {/* CONSULTAR - Listar documentos */}
-            <Route path="/listar-picking" element={<ListarOrdenesPicking />} />
-            <Route path="/listar-guias" element={<ListarGuiasDespacho />} />
-          </Routes>
-        </div>
+      <div style={{ padding: "32px 20px" }}>
+        <Routes>
+          <Route path="/home" element={<Home />} />
+          <Route
+            path="/listar-pedidos-ventas"
+            element={<ListarPedidosVentas />}
+          />
+          <Route
+            path="/listar-ordenes-compra"
+            element={<ListarOrdenesCompra />}
+          />
+          <Route
+            path="/procesar-automatico"
+            element={<ProcesarPedidoAutomatico />}
+          />
+          <Route path="/estadisticas" element={<EstadisticasBalanceo />} />
+          <Route path="/" element={<CrearOrdenPicking />} />
+          <Route path="/guias" element={<CrearGuiaDespacho />} />
+          <Route path="/listar-picking" element={<ListarOrdenesPicking />} />
+          <Route path="/listar-guias" element={<ListarGuiasDespacho />} />
+        </Routes>
       </div>
-    </BrowserRouter>
+    </div>
   );
 }
 

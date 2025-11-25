@@ -27,8 +27,12 @@ export default function ListarPedidosVentas() {
       setLoading(true);
       setError(null);
       const response = await integracionService.listarPedidosVentas();
-      if (response?.success && response.data) setPedidos(response.data);
-      else setError('No se pudieron cargar los pedidos');
+      if (response?.success && response.data) {
+        console.log('Pedidos de ventas cargados:', response.data);
+        setPedidos(response.data);
+      } else {
+        setError('No se pudieron cargar los pedidos');
+      }
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Error al cargar pedidos de ventas');
     } finally {
