@@ -1,12 +1,10 @@
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import CrearOrdenPicking from "./pages/CrearOrdenPicking";
-import CrearGuiaDespacho from "./pages/CrearGuiaDespacho";
 import ListarOrdenesPicking from "./pages/ListarOrdenesPicking";
 import ListarGuiasDespacho from "./pages/ListarGuiasDespacho";
 import ListarPedidosVentas from "./pages/ListarPedidosVentas";
 import ListarOrdenesCompra from "./pages/ListarOrdenesCompra";
 import ProcesarPedidoAutomatico from "./pages/ProcesarPedidoAutomatico";
-import EstadisticasBalanceo from "./pages/EstadisticasBalanceo";
+// import EstadisticasBalanceo from "./pages/EstadisticasBalanceo";
 import "./App.css";
 
 function App() {
@@ -61,7 +59,7 @@ function App() {
 
             {/* SECCIÓN: RECIBIR */}
             <Link to="/listar-pedidos-ventas" style={buttonStyle}>
-              � Ver Pedidos
+              🔍 Ver Pedidos
             </Link>
             <Link to="/listar-ordenes-compra" style={buttonStyle}>
               📦 Ver OC
@@ -79,29 +77,14 @@ function App() {
 
             {/* SECCIÓN: AUTOMATIZACIÓN */}
             <Link to="/procesar-automatico" style={buttonStyle}>
-              🤖 Procesar Auto
+              🤖 Procesar
             </Link>
-            <Link to="/estadisticas" style={buttonStyle}>
+            {/* <Link to="/estadisticas" style={buttonStyle}>
               📊 Balanceo
-            </Link>
+            </Link> */}
 
-            {/* SEPARADOR */}
-            <div
-              style={{
-                width: "2px",
-                height: "24px",
-                background: "rgba(0, 0, 0, 0.3)",
-                margin: "0 4px",
-              }}
-            ></div>
-
-            {/* SECCIÓN: PROCESAR MANUAL */}
-            <Link to="/" style={buttonStyle}>
-              📝 Crear OT
-            </Link>
-            <Link to="/guias" style={buttonStyle}>
-              🚚 Crear Guía
-            </Link>
+            {/* SECCIÓN: PROCESAR MANUAL (creación automática ahora) */}
+            {/* Las páginas de creación manual fueron retiradas; use 'Procesar Auto' o listado para gestionar OT/Guías */}
 
             {/* SEPARADOR */}
             <div
@@ -140,11 +123,10 @@ function App() {
               path="/procesar-automatico"
               element={<ProcesarPedidoAutomatico />}
             />
-            <Route path="/estadisticas" element={<EstadisticasBalanceo />} />
+            {/* <Route path="/estadisticas" element={<EstadisticasBalanceo />} /> */}
 
-            {/* PROCESAR - Crear documentos */}
-            <Route path="/" element={<CrearOrdenPicking />} />
-            <Route path="/guias" element={<CrearGuiaDespacho />} />
+            {/* PROCESAR - Crear documentos (rutas manuales removidas) */}
+            <Route path="/" element={<ListarOrdenesPicking />} />
 
             {/* CONSULTAR - Listar documentos */}
             <Route path="/listar-picking" element={<ListarOrdenesPicking />} />

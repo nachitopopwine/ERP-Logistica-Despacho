@@ -10,6 +10,7 @@ import recepcionRoutes from "./routes/recepcion.routes";
 import integracionRoutes from "./routes/integracion.routes";
 import recursosRoutes from "./routes/recursos.routes";
 import automatizacionRoutes from "./routes/automatizacion.routes";
+import usuariosRoutes from "./routes/usuarios.routes";
 
 // Cargar variables de entorno
 dotenv.config();
@@ -61,6 +62,7 @@ app.use("/api/recepcion", recepcionRoutes);
 app.use("/api/integracion", integracionRoutes);
 app.use("/api/recursos", recursosRoutes);
 app.use("/api/automatizacion", automatizacionRoutes);
+app.use("/api/usuarios", usuariosRoutes);
 
 // Ruta 404
 app.use((req: Request, res: Response) => {

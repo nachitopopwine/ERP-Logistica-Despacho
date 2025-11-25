@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 export interface ProcesarPedidoRequest {
   id_venta: number;
@@ -52,16 +52,32 @@ export const automatizacionService = {
   /**
    * Procesa un pedido de venta automáticamente
    */
-  procesarPedido: async (data: ProcesarPedidoRequest): Promise<ProcesarPedidoResponse> => {
-    const response = await api.post('/automatizacion/procesar-pedido', data);
+  procesarPedido: async (
+    data: ProcesarPedidoRequest
+  ): Promise<ProcesarPedidoResponse> => {
+    const response = await api.post("/automatizacion/procesar-pedido", data);
     return response.data;
   },
 
   /**
    * Obtiene estadísticas de balanceo de carga
    */
-  obtenerEstadisticas: async (): Promise<{ success: boolean; data: EstadisticasBalanceo }> => {
-    const response = await api.get('/automatizacion/estadisticas-balanceo');
+  obtenerEstadisticas: async (): Promise<{
+    success: boolean;
+    data: EstadisticasBalanceo;
+  }> => {
+    const response = await api.get("/automatizacion/estadisticas-balanceo");
     return response.data;
-  }
+  },
+  editarOt: async (id_ot: number, data: { id_empleado: number }) => {
+    const response = await api.put(`/automatizacion/ot/${id_ot}`, data);
+    return response.data;
+  },
+  editarGuia: async (
+    id_guia: number,
+    data: { transportista?: string; fecha?: string; direccion_entrega?: string }
+  ) => {
+    const response = await api.put(`/automatizacion/guia/${id_guia}`, data);
+    return response.data;
+  },
 };
