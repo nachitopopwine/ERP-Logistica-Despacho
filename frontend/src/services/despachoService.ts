@@ -1,16 +1,18 @@
-import api from './api';
-import type { GuiaDespacho, CreateGuiaDespacho, ApiResponse } from '../types';
+import api from "./api";
+import type { GuiaDespacho, CreateGuiaDespacho, ApiResponse } from "../types";
 
 export const despachoService = {
   // Obtener todas las guías de despacho
   getAll: async () => {
-    const response = await api.get<ApiResponse<GuiaDespacho[]>>('/despacho');
+    const response = await api.get<ApiResponse<GuiaDespacho[]>>("/despacho");
     return response.data;
   },
 
   // Obtener una guía por ID
   getById: async (id: number) => {
-    const response = await api.get<ApiResponse<GuiaDespacho>>(`/despacho/${id}`);
+    const response = await api.get<ApiResponse<GuiaDespacho>>(
+      `/despacho/${id}`
+    );
     return response.data;
   },
 
@@ -21,9 +23,20 @@ export const despachoService = {
       id_ot: data.id_ot,
       fecha: data.fecha_despacho,
       transportista: data.transportista,
-      direccion_entrega: data.direccion_entrega
+      direccion_entrega: data.direccion_entrega,
     };
-    const response = await api.post<ApiResponse<GuiaDespacho>>('/despacho', backendData);
+    const response = await api.post<ApiResponse<GuiaDespacho>>(
+      "/despacho",
+      backendData
+    );
+    return response.data;
+  },
+  // Actualizar guía (usa el endpoint de automatizacion)
+  update: async (id: number, data: Partial<GuiaDespacho>) => {
+    const response = await api.put<ApiResponse<GuiaDespacho>>(
+      `/automatizacion/guia/${id}`,
+      data
+    );
     return response.data;
   },
 };

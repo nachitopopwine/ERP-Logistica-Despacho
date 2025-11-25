@@ -154,32 +154,126 @@ export const updateOrdenPicking = async (
 ): Promise<void> => {
   try {
     const { id } = req.params;
-    const { estado, observaciones } = req.body;
+    const { estado, observaciones, fecha, id_empleado } = req.body;
 
-    const result = await pool.query(
-      `
-      UPDATE "Logistica".log_ot_picking
-      SET estado = COALESCE($1, estado),
-          observaciones = COALESCE($2, observaciones)
-      WHERE id_ot = $3
-      RETURNING *
-    `,
-      [estado, observaciones, id]
-    );
+    // Usamos transacción porque podemos necesitar ajustar contadores en log_cuentas
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
 
-    if (result.rows.length === 0) {
-      res.status(404).json({
-        success: false,
-        message: "Orden de picking no encontrada",
-      });
-      return;
+      // Obtener OT actual for update
+      const otQ = await client.query(
+        `SELECT id_ot, id_empleado, fecha FROM "Logistica".log_ot_picking WHERE id_ot = $1 FOR UPDATE`,
+        [id]
+      );
+      if (otQ.rows.length === 0) {
+        await client.query("ROLLBACK");
+        res
+          .status(404)
+          .json({ success: false, message: "Orden de picking no encontrada" });
+        return;
+      }
+
+      const ot = otQ.rows[0];
+
+      // Validación de fecha: si se envió una nueva fecha, no puede ser menor que la fecha actual registrada
+      if (fecha) {
+        const nuevaFecha = new Date(fecha);
+        const fechaActual = new Date(ot.fecha);
+        if (isNaN(nuevaFecha.getTime())) {
+          await client.query("ROLLBACK");
+          res.status(400).json({ success: false, message: "Fecha inválida" });
+          return;
+        }
+        if (nuevaFecha < fechaActual) {
+          await client.query("ROLLBACK");
+          res
+            .status(400)
+            .json({
+              success: false,
+              message:
+                "La nueva fecha no puede ser anterior a la fecha registrada",
+            });
+          return;
+        }
+      }
+
+      // Si cambió el empleado, ajustar contadores en Logistica.log_cuentas (empleado_logistica)
+      if (id_empleado && id_empleado !== ot.id_empleado) {
+        const oldAccountQ = await client.query(
+          `SELECT id FROM "Logistica".log_cuentas WHERE ref_id = $1 AND role = 'empleado_logistica' LIMIT 1`,
+          [ot.id_empleado]
+        );
+        const newAccountQ = await client.query(
+          `SELECT id FROM "Logistica".log_cuentas WHERE ref_id = $1 AND role = 'empleado_logistica' LIMIT 1`,
+          [id_empleado]
+        );
+
+        if (oldAccountQ.rows.length > 0) {
+          await client.query(
+            `UPDATE "Logistica".log_cuentas SET cont_asignaciones = GREATEST(coalesce(cont_asignaciones,0) - 1, 0) WHERE id = $1`,
+            [oldAccountQ.rows[0].id]
+          );
+        }
+        if (newAccountQ.rows.length > 0) {
+          await client.query(
+            `UPDATE "Logistica".log_cuentas SET cont_asignaciones = coalesce(cont_asignaciones,0) + 1 WHERE id = $1`,
+            [newAccountQ.rows[0].id]
+          );
+        }
+      }
+
+      // Construir update dinámico
+      const sets: string[] = [];
+      const vals: any[] = [];
+      let idx = 1;
+      if (estado) {
+        sets.push(`estado = $${idx++}`);
+        vals.push(estado);
+      }
+      if (observaciones !== undefined) {
+        sets.push(`observaciones = $${idx++}`);
+        vals.push(observaciones);
+      }
+      if (fecha) {
+        sets.push(`fecha = $${idx++}`);
+        vals.push(fecha);
+      }
+      if (id_empleado) {
+        sets.push(`id_empleado = $${idx++}`);
+        vals.push(id_empleado);
+      }
+
+      if (sets.length > 0) {
+        const q = `UPDATE "Logistica".log_ot_picking SET ${sets.join(
+          ", "
+        )} WHERE id_ot = $${idx} RETURNING *`;
+        vals.push(id);
+        const updateRes = await client.query(q, vals);
+        await client.query("COMMIT");
+        res.json({
+          success: true,
+          message: "Orden de picking actualizada exitosamente",
+          data: updateRes.rows[0],
+        });
+        return;
+      }
+
+      // No hubo cambios
+      await client.query("COMMIT");
+      res.json({ success: true, message: "Sin cambios" });
+    } catch (err) {
+      await client.query("ROLLBACK");
+      console.error("Error al actualizar orden de picking:", err);
+      res
+        .status(500)
+        .json({
+          success: false,
+          message: "Error al actualizar orden de picking",
+        });
+    } finally {
+      client.release();
     }
-
-    res.json({
-      success: true,
-      message: "Orden de picking actualizada exitosamente",
-      data: result.rows[0],
-    });
   } catch (error) {
     console.error("Error al actualizar orden de picking:", error);
     res.status(500).json({
