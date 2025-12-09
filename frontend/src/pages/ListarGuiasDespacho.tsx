@@ -351,6 +351,7 @@ const ListarGuiasDespacho: React.FC = () => {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     ID Guía
@@ -360,6 +361,7 @@ const ListarGuiasDespacho: React.FC = () => {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     ID OT
@@ -369,6 +371,7 @@ const ListarGuiasDespacho: React.FC = () => {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Fecha
@@ -378,6 +381,7 @@ const ListarGuiasDespacho: React.FC = () => {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Transportista
@@ -387,6 +391,7 @@ const ListarGuiasDespacho: React.FC = () => {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Dirección
@@ -396,6 +401,7 @@ const ListarGuiasDespacho: React.FC = () => {
                       padding: "16px",
                       textAlign: "center",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Estado OT

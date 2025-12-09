@@ -355,6 +355,7 @@ const ListarOrdenesPicking: React.FC = () => {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     ID OT
@@ -364,6 +365,7 @@ const ListarOrdenesPicking: React.FC = () => {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Fecha
@@ -373,6 +375,7 @@ const ListarOrdenesPicking: React.FC = () => {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Empleado
@@ -382,6 +385,7 @@ const ListarOrdenesPicking: React.FC = () => {
                       padding: "16px",
                       textAlign: "center",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Estado
@@ -391,6 +395,7 @@ const ListarOrdenesPicking: React.FC = () => {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Observaciones

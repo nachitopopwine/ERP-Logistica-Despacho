@@ -266,6 +266,7 @@ export default function ListarOrdenesCompra() {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     N° Orden
@@ -275,6 +276,7 @@ export default function ListarOrdenesCompra() {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Proveedor
@@ -284,6 +286,7 @@ export default function ListarOrdenesCompra() {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Fecha
@@ -293,6 +296,7 @@ export default function ListarOrdenesCompra() {
                       padding: "16px",
                       textAlign: "center",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Estado
@@ -302,6 +306,7 @@ export default function ListarOrdenesCompra() {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Recibida
@@ -311,6 +316,7 @@ export default function ListarOrdenesCompra() {
                       padding: "16px",
                       textAlign: "left",
                       fontWeight: "700",
+                      color: "#000000ff",
                     }}
                   >
                     Observaciones

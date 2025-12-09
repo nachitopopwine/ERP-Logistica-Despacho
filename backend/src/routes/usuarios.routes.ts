@@ -1,14 +1,9 @@
 import { Router } from "express";
-import {
-  listarEmpleadosLogistica,
-  registrarCuenta,
-  login,
-} from "../controllers/usuarios.controller";
+import { login, register } from "../controllers/usuarios.controller.js";
 
 const router = Router();
 
-router.get("/empleados-logistica", listarEmpleadosLogistica);
-router.post("/register", registrarCuenta);
 router.post("/login", login);
+router.post("/register", register);
 
 export default router;

@@ -1,0 +1,503 @@
+/* Variables y configuración base */
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Paleta consistente */
+  --background-primary: #21262d;
+  --background-secondary: #1a1a1a;
+  --background-tertiary: #242424;
+  --background-hover: #2a2a2a;
+  --background-header: #3a3a3a;
+  
+  --border-primary: #444;
+  --border-secondary: #555;
+  --border-focus: #646cff;
+  
+  --text-primary: #ffffff;
+  --text-secondary: #ccc;
+  --text-disabled: #888;
+  
+  --button-primary: #646cff;
+  --button-primary-hover: #535bf2;
+  --button-secondary: #3a3a3a;
+  --button-secondary-hover: #4a4a4a;
+  --button-danger: #a94442;
+  --button-danger-hover: #8c3836;
+  --button-success: #28a745;
+  --button-success-hover: #218838;
+  
+  --color-error: #ff6b6b;
+  --color-success: #4caf50;
+  --color-warning: #ffcc02;
+  --color-info: #79b8ff;
+}
+
+/* Reset básico */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* html/body para layout de altura completa */
+html,
+body {
+  height: 100%;
+  min-width: 320px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--background-secondary);
+  min-height: 100vh;
+}
+
+/* Root ocupa toda la altura */
+#root {
+  height: 100%;
+  background-color: var(--background-primary);
+}
+
+/* Estructura general de la app */
+.app {
+  min-height: 100vh;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ========================================
+   ESTILOS SOLO PARA MÓDULOS ERP (NO LOGIN)
+   Usar clase .erp-content para aislar
+   ======================================== */
+
+/* Navegación principal (Logística / ERP) */
+.erp-content nav {
+  background: #ffffff;
+  border-bottom: 3px solid #000000;
+  width: 100%;
+  padding: 0 20px;
+}
+
+.erp-content nav h1 {
+  color: #000000;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.erp-content nav a {
+  background: #333333;
+  color: #ffffff;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.erp-content nav a:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Contenido principal centrado */
+.erp-content .main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  width: 100%;
+  background: #1a1a1a;
+  color: #f5f5f5;
+}
+
+/* Contenedores de formularios */
+.erp-content .form-container {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  max-width: 850px;
+  width: 100%;
+  margin: 20px auto;
+  color: #000000;
+}
+
+/* Títulos - Solo en contenido ERP */
+.erp-content h1,
+.erp-content h2,
+.erp-content h3,
+.erp-content h4,
+.erp-content h5,
+.erp-content h6 {
+  color: #2d3748;
+  font-weight: 700;
+}
+
+.erp-content h1 {
+  font-size: 28px;
+  margin-bottom: 24px;
+  color: #000000;
+  border-bottom: 3px solid #000000;
+  padding-bottom: 12px;
+}
+
+/* Labels - Solo en formularios ERP */
+.erp-content label {
+  color: #4a5568;
+  font-weight: 600;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 8px;
+}
+
+/* Inputs y selects - SOLO dentro de contenedores del ERP */
+.erp-content .form-container input,
+.erp-content .form-container select,
+.erp-content .form-container textarea,
+.erp-content .list-container input,
+.erp-content .list-container select,
+.erp-content .list-container textarea {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f7fafc;
+  color: #2d3748;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.erp-content .form-container input:focus,
+.erp-content .form-container select:focus,
+.erp-content .form-container textarea:focus,
+.erp-content .list-container input:focus,
+.erp-content .list-container select:focus,
+.erp-content .list-container textarea:focus {
+  outline: none;
+  border-color: #000000;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.erp-content .form-container input::placeholder,
+.erp-content .form-container textarea::placeholder,
+.erp-content .list-container input::placeholder,
+.erp-content .list-container textarea::placeholder {
+  color: #a0aec0;
+}
+
+/* Botones - Solo comportamiento básico global */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+button:focus-visible {
+  outline: 2px solid #646cff;
+  outline-offset: 2px;
+}
+
+/* Botones específicos del ERP */
+.erp-content button:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
+.erp-content button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.erp-content button:disabled {
+  background: #808080;
+  color: #d3d3d3;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Mensajes de éxito/error */
+.erp-content .message-success {
+  background: #48bb78;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(72, 187, 120, 0.3);
+  border-left: 4px solid #22543d;
+}
+
+.erp-content .message-error {
+  background: #ff0000;
+  color: #ffffff;
+  padding: 16px 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(245, 101, 101, 0.3);
+  border-left: 4px solid #742a2a;
+}
+
+/* Cajas de ayuda */
+.erp-content .help-box {
+  background: #ecefff;
+  color: #000000;
+  padding: 20px;
+  border-radius: 12px;
+  margin-top: 24px;
+  border-left: 4px solid #3182ce;
+  box-shadow: 0 4px 12px rgba(49, 130, 206, 0.2);
+}
+
+.erp-content .help-box h3 {
+  color: #2c5282;
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+.erp-content .help-box ul {
+  color: #2c5282;
+  font-size: 14px;
+  line-height: 1.8;
+  margin-left: 20px;
+}
+
+.erp-content .help-box li {
+  margin-bottom: 8px;
+}
+
+/* Tablas */
+.erp-content table {
+  width: 100%;
+  background: #ffffff;
+  color: #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.erp-content table thead {
+  background: #1a1a1a;
+  color: #f5f5f5;
+}
+
+.erp-content table th {
+  color: white;
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  padding: 16px 12px;
+}
+
+.erp-content table td {
+  padding: 14px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+}
+
+.erp-content table tbody tr {
+  transition: background 0.2s ease;
+}
+
+.erp-content table tbody tr:hover {
+  background: #f7fafc;
+}
+
+.erp-content table tbody tr:nth-child(even) {
+  background: #fafbfc;
+}
+
+.erp-content table tbody tr:nth-child(even):hover {
+  background: #f1f5f9;
+}
+
+/* Badges de estado */
+.erp-content .badge {
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-block;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.erp-content .badge-pendiente {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #78350f;
+}
+
+.erp-content .badge-proceso {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  color: white;
+}
+
+.erp-content .badge-completada {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  color: white;
+}
+
+.erp-content .badge-cancelada {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  color: white;
+}
+
+/* Contenedor de lista */
+.erp-content .list-container {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  max-width: 1200px;
+  width: 100%;
+  margin: 20px auto;
+}
+
+/* Header de lista */
+.erp-content .list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 3px solid #000000;
+}
+
+.erp-content .list-header h1 {
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+
+/* Botón de actualizar */
+.erp-content .btn-refresh {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  padding: 10px 20px;
+  font-size: 14px;
+  width: auto;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+.erp-content .btn-refresh:hover {
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
+}
+
+/* Estado vacío */
+.erp-content .empty-state {
+  text-align: center;
+  padding: 60px 40px;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: 16px;
+  border: 2px dashed #9ca3af;
+}
+
+.erp-content .empty-state h3 {
+  color: #6b7280;
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.erp-content .empty-state p {
+  color: #9ca3af;
+  font-size: 15px;
+}
+
+/* Utilitario de accesibilidad */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Animaciones */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.erp-content .form-container,
+.erp-content .list-container {
+  animation: fadeIn 0.5s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .erp-content .form-container,
+  .erp-content .list-container {
+    padding: 20px;
+    margin: 16px;
+  }
+
+  .erp-content nav {
+    padding: 0 16px;
+  }
+
+  .erp-content nav > div {
+    flex-direction: column;
+    gap: 10px !important;
+  }
+
+  .erp-content .list-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .erp-content .btn-refresh {
+    width: 100%;
+  }
+
+  .erp-content table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .erp-content h1 {
+    font-size: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .erp-content .main-content {
+    padding: 10px;
+  }
+
+  .erp-content .form-container,
+  .erp-content .list-container {
+    padding: 16px;
+    margin: 10px;
+  }
+
+  .erp-content h1 {
+    font-size: 22px;
+  }
+
+  .erp-content table th,
+  .erp-content table td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+}

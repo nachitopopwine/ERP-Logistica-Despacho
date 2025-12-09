@@ -1,29 +1,82 @@
-import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import { Routes, Route, Link, useLocation } from "react-router-dom";
+import type { ReactElement } from "react";
+
+import { AuthProvider, useAuth, canAccess } from "./utils/AuthContext";
+import { ROLES, hasPermission } from "./utils/Permissions";
+
+import Home from "./views/Home";
+import Login from "./views/Login";
+
 import ListarOrdenesPicking from "./pages/ListarOrdenesPicking";
 import ListarGuiasDespacho from "./pages/ListarGuiasDespacho";
 import ListarPedidosVentas from "./pages/ListarPedidosVentas";
 import ListarOrdenesCompra from "./pages/ListarOrdenesCompra";
 import ProcesarPedidoAutomatico from "./pages/ProcesarPedidoAutomatico";
-// import EstadisticasBalanceo from "./pages/EstadisticasBalanceo";
-import "./App.css";
 
-function App() {
-  /* Update button styles */
+import InventarioPage from "./Modulo de Inventario/InventarioPage";
+import VentasPage from "./Modulo de Ventas";
+import ComprasPage from "./Modulo de Compras/ComprasPage";
+
+function ProtectedRoute({
+  element,
+  requiredPermission,
+}: {
+  element: ReactElement;
+  requiredPermission?: string;
+}) {
+  const { user, isAuthenticated } = useAuth();
+  const token = localStorage.getItem("token");
+
+  if (!isAuthenticated || !token) {
+    window.location.replace("/auth");
+    return null;
+  }
+
+  // Si se especifica un permiso requerido, verificarlo
+  if (requiredPermission) {
+    const permitted = hasPermission(
+      user?.rol as any,
+      requiredPermission as any
+    );
+    
+    if (!permitted) {
+      alert("No tienes permiso para acceder a esta sección");
+      window.location.replace("/");
+      return null;
+    }
+  }
+
+  return element;
+}
+
+function AppContent() {
+  const location = useLocation();
+  const { user } = useAuth();
+
+  const isAuthRoute = location.pathname === "/auth";
+
+  // Verificar si el usuario tiene permiso para ver logística
+  const canSeeLogistica = user?.rol 
+    ? hasPermission(user.rol as any, "puedeVerLogistica")
+    : false;
+
+  const showNavbar = !isAuthRoute && canSeeLogistica;
+
   const buttonStyle = {
     color: "white",
     textDecoration: "none",
     padding: "10px 20px",
-    background: "#333333", // Dark gray background
+    background: "#333333",
     borderRadius: "8px",
     fontWeight: "600",
     fontSize: "14px",
     transition: "all 0.3s ease",
     boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
-  };
+  } as React.CSSProperties;
 
   return (
-    <BrowserRouter>
-      <div className="app">
+    <div className={isAuthRoute ? "" : "erp-content"}>
+      {showNavbar && (
         <nav
           style={{
             backgroundColor: "rgba(255, 255, 255, 0.95)",
@@ -57,7 +110,6 @@ function App() {
               🚚 ERP Logística
             </h1>
 
-            {/* SECCIÓN: RECIBIR */}
             <Link to="/listar-pedidos-ventas" style={buttonStyle}>
               🔍 Ver Pedidos
             </Link>
@@ -65,7 +117,6 @@ function App() {
               📦 Ver OC
             </Link>
 
-            {/* SEPARADOR */}
             <div
               style={{
                 width: "2px",
@@ -73,20 +124,12 @@ function App() {
                 background: "rgba(0, 0, 0, 0.3)",
                 margin: "0 4px",
               }}
-            ></div>
+            />
 
-            {/* SECCIÓN: AUTOMATIZACIÓN */}
             <Link to="/procesar-automatico" style={buttonStyle}>
               🤖 Procesar
             </Link>
-            {/* <Link to="/estadisticas" style={buttonStyle}>
-              📊 Balanceo
-            </Link> */}
 
-            {/* SECCIÓN: PROCESAR MANUAL (creación automática ahora) */}
-            {/* Las páginas de creación manual fueron retiradas; use 'Procesar Auto' o listado para gestionar OT/Guías */}
-
-            {/* SEPARADOR */}
             <div
               style={{
                 width: "2px",
@@ -94,9 +137,8 @@ function App() {
                 background: "rgba(0, 0, 0, 0.3)",
                 margin: "0 4px",
               }}
-            ></div>
+            />
 
-            {/* SECCIÓN: CONSULTAR */}
             <Link to="/listar-picking" style={buttonStyle}>
               📊 Listar OT
             </Link>
@@ -105,36 +147,102 @@ function App() {
             </Link>
           </div>
         </nav>
+      )}
 
-        <div style={{ padding: "32px 20px" }}>
-          <Routes>
-            {/* INTEGRACIÓN - Recibir de otros ERPs */}
-            <Route
-              path="/listar-pedidos-ventas"
-              element={<ListarPedidosVentas />}
-            />
-            <Route
-              path="/listar-ordenes-compra"
-              element={<ListarOrdenesCompra />}
-            />
+      <main style={{ padding: isAuthRoute ? "0" : "32px 20px" }}>
+        <Routes>
+          <Route path="/auth" element={<Login />} />
+          <Route path="/" element={<ProtectedRoute element={<Home />} />} />
+          <Route path="*" element={<ProtectedRoute element={<Home />} />} />
 
-            {/* AUTOMATIZACIÓN - Procesamiento automático */}
-            <Route
-              path="/procesar-automatico"
-              element={<ProcesarPedidoAutomatico />}
-            />
-            {/* <Route path="/estadisticas" element={<EstadisticasBalanceo />} /> */}
+          {/* Rutas de Logística - Requieren permiso puedeVerLogistica */}
+          <Route
+            path="/listar-pedidos-ventas"
+            element={
+              <ProtectedRoute
+                element={<ListarPedidosVentas />}
+                requiredPermission="puedeVerLogistica"
+              />
+            }
+          />
+          <Route
+            path="/listar-ordenes-compra"
+            element={
+              <ProtectedRoute
+                element={<ListarOrdenesCompra />}
+                requiredPermission="puedeVerLogistica"
+              />
+            }
+          />
+          <Route
+            path="/procesar-automatico"
+            element={
+              <ProtectedRoute
+                element={<ProcesarPedidoAutomatico />}
+                requiredPermission="puedeVerLogistica"
+              />
+            }
+          />
+          <Route
+            path="/listar-picking"
+            element={
+              <ProtectedRoute
+                element={<ListarOrdenesPicking />}
+                requiredPermission="puedeVerLogistica"
+              />
+            }
+          />
+          <Route
+            path="/listar-guias"
+            element={
+              <ProtectedRoute
+                element={<ListarGuiasDespacho />}
+                requiredPermission="puedeVerLogistica"
+              />
+            }
+          />
 
-            {/* PROCESAR - Crear documentos (rutas manuales removidas) */}
-            <Route path="/" element={<ListarOrdenesPicking />} />
+          {/* Rutas de otros módulos */}
+          <Route
+            path="/inventario"
+            element={
+              <ProtectedRoute
+                element={<InventarioPage />}
+                requiredPermission="puedeVerInventario"
+              />
+            }
+          />
+          <Route
+            path="/ventas"
+            element={
+              <ProtectedRoute
+                element={<VentasPage />}
+                requiredPermission="puedeVerVentas"
+              />
+            }
+          />
+          <Route
+            path="/compras/*"
+            element={
+              <ProtectedRoute
+                element={<ComprasPage />}
+                requiredPermission="puedeVerCompras"
+              />
+            }
+          />
+        </Routes>
+      </main>
+    </div>
+  );
+}
 
-            {/* CONSULTAR - Listar documentos */}
-            <Route path="/listar-picking" element={<ListarOrdenesPicking />} />
-            <Route path="/listar-guias" element={<ListarGuiasDespacho />} />
-          </Routes>
-        </div>
-      </div>
-    </BrowserRouter>
+function App() {
+  return (
+    <div className="app">
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </div>
   );
 }
 

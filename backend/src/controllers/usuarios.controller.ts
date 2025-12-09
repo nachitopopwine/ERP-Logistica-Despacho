@@ -1,156 +1,160 @@
 import { Request, Response } from "express";
-import pool from "../config/database";
+import { pool } from "../config/database.js";
 import bcrypt from "bcryptjs";
 
 /**
- * GET /api/usuarios/empleados-logistica
- * Lista empleados con rol 'EMPLEADO_LOGISTICA' desde public.empleado
+ * Login: Busca primero en public.empleado, luego en logistica.log_cuentas
  */
-export const listarEmpleadosLogistica = async (
-  _req: Request,
-  res: Response
-) => {
+export const login = async (req: Request, res: Response): Promise<void> => {
   try {
-    const query = `
-      SELECT id_empleado as id, nombre, apellido, rol, email
-      FROM public.empleado
-      WHERE rol = 'EMPLEADO_LOGISTICA' AND estado = 'ACTIVO'
-      ORDER BY nombre, apellido
-    `;
+    const { email, password } = req.body;
 
-    console.log("Executing query to list empleados logistica", query);
-
-    const result = await pool.query(query);
-    res.json({ success: true, data: result.rows });
-  } catch (error) {
-    console.error("Error listarEmpleadosLogistica", error);
-    res.status(500).json({
-      success: false,
-      message: "Error al obtener empleados de logística",
-    });
-  }
-};
-
-/**
- * POST /api/usuarios/register
- * Registra una cuenta vinculada a un empleado_logistica o transportista
- * body: { role: 'transportista'|'empleado_logistica', ref_id: number, username?: string, password: string }
- */
-export const registrarCuenta = async (req: Request, res: Response) => {
-  const { role, ref_id, username, password } = req.body;
-
-  if (!role || !ref_id || !password) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Faltan datos obligatorios" });
-  }
-
-  // Determine default username when not provided
-  let finalUsername = username;
-  try {
-    if (!finalUsername) {
-      if (role === "empleado_logistica") {
-        const r = await pool.query(
-          "SELECT email FROM public.empleado WHERE id_empleado = $1",
-          [ref_id]
-        );
-        finalUsername = r.rows[0]?.email || `empleado_${ref_id}`;
-      } else if (role === "transportista") {
-        const r = await pool.query(
-          'SELECT email, nombre FROM "Logistica".log_transportistas WHERE id_transportista = $1',
-          [ref_id]
-        );
-        finalUsername = r.rows[0]?.email || `trans_${ref_id}`;
-      } else if (role === "jefe_logistica") {
-        const r = await pool.query(
-          "SELECT email FROM public.empleado WHERE id_empleado = $1",
-          [ref_id]
-        );
-        finalUsername = r.rows[0]?.email || `jefe_${ref_id}`;
-      }
+    if (!email || !password) {
+      res.status(400).json({
+        success: false,
+        message: "Email y contraseña son requeridos",
+      });
+      return;
     }
 
-    // Check if username already exists
-    const exist = await pool.query(
-      'SELECT id FROM "Logistica".log_cuentas WHERE username = $1',
-      [finalUsername]
+    /* 1. Buscar en public.empleado
+    let userQuery = await pool.query(
+      `SELECT id, rut, email, nombre, apellido, rol, password_hash 
+       FROM public.empleado 
+       WHERE email = $1 AND activo = true`,
+      [email]
     );
-    if ((exist?.rowCount ?? 0) > 0) {
-      return res
-        .status(409)
-        .json({ success: false, message: "El nombre de usuario ya existe" });
+
+
+    let user = userQuery.rows[0];
+    let source = "public.empleado";
+
+  /** */
+
+    // 2. Si no existe, buscar en logistica.log_cuentas
+    //if (!user) {
+      let userQuery = await pool.query(
+        `SELECT id, username, role, password_hash 
+         FROM "Logistica".log_cuentas 
+         WHERE username = $1`,
+        [email]
+      );
+      let user = userQuery.rows[0];
+      let source = "Logistica.log_cuentas";
+    //}
+
+    // 3. Usuario no encontrado en ninguna tabla
+    if (!user) {
+      res.status(401).json({
+        success: false,
+        message: "Credenciales inválidas",
+      });
+      return;
     }
 
-    // Hash password
-    const salt = bcrypt.genSaltSync(10);
-    const hash = bcrypt.hashSync(password, salt);
+    // 4. Verificar contraseña
+    const passwordMatch = await bcrypt.compare(password, user.password_hash);
 
-    // Insert account
-    const insertQ = `
-      INSERT INTO "Logistica".log_cuentas (username, role, ref_id, password_hash, created_at)
-      VALUES ($1, $2, $3, $4, NOW()) RETURNING id, username, role, ref_id, created_at
-    `;
-    const inserted = await pool.query(insertQ, [
-      finalUsername,
-      role,
-      ref_id,
-      hash,
-    ]);
+    if (!passwordMatch) {
+      res.status(401).json({
+        success: false,
+        message: "Credenciales inválidas",
+      });
+      return;
+    }
 
-    res.status(201).json({ success: true, data: inserted.rows[0] });
-  } catch (error) {
-    console.error("Error registrarCuenta", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Error al crear la cuenta" });
-  }
-};
-
-/**
- * POST /api/usuarios/login
- * body: { username, password }
- */
-export const login = async (req: Request, res: Response) => {
-  const { username, password } = req.body;
-  if (!username || !password)
-    return res
-      .status(400)
-      .json({ success: false, message: "Faltan credenciales" });
-
-  try {
-    const q =
-      'SELECT id, username, role, ref_id, password_hash FROM "Logistica".log_cuentas WHERE username = $1';
-    const result = await pool.query(q, [username]);
-    if (result.rowCount === 0)
-      return res
-        .status(401)
-        .json({ success: false, message: "Credenciales inválidas" });
-
-    const account = result.rows[0];
-    const match = bcrypt.compareSync(password, account.password_hash);
-    if (!match)
-      return res
-        .status(401)
-        .json({ success: false, message: "Credenciales inválidas" });
-
-    // Update last_login
-    await pool.query(
-      'UPDATE "Logistica".log_cuentas SET last_login = NOW() WHERE id = $1',
-      [account.id]
+    // 5. Generar token simple (en producción usar JWT)
+    const token = Buffer.from(`${user.id}:${user.email}:${Date.now()}`).toString(
+      "base64"
     );
 
-    // Return minimal account info (do not send hash)
+    // 6. Retornar datos del usuario
     res.json({
       success: true,
-      data: {
-        id: account.id,
-        username: account.username,
-        role: account.role,
-        ref_id: account.ref_id,
+      access_token: token,
+      empleado: {
+        id: user.id,
+        rol: user.role,
+        email: user.username,
+        source, // Para debugging: de dónde viene el usuario
       },
     });
-  } catch (error) {
-    console.error("Error login", error);
-    res.status(500).json({ success: false, message: "Error interno en login" });
+  } catch (error: any) {
+    console.error("Error en login:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error del servidor",
+      error: error.message,
+    });
+  }
+};
+
+/**
+ * Registro: Crea usuario en logistica.log_cuentas
+ */
+export const register = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { rut, email, password, nombre, apellido, rol } = req.body;
+
+    if (!rut || !email || !password || !nombre) {
+      res.status(400).json({
+        success: false,
+        message: "RUT, email, contraseña y nombre son requeridos",
+      });
+      return;
+    }
+
+    // Verificar si ya existe en public.empleado
+    const empleadoExiste = await pool.query(
+      "SELECT id FROM public.empleado WHERE rut = $1 OR email = $2",
+      [rut, email]
+    );
+
+    if (empleadoExiste.rows.length > 0) {
+      res.status(409).json({
+        success: false,
+        message: "Ya existe un empleado con ese RUT o email",
+      });
+      return;
+    }
+
+    // Verificar si ya existe en logistica.log_cuentas
+    const cuentaExiste = await pool.query(
+      "SELECT id FROM logistica.log_cuentas WHERE rut = $1 OR email = $2",
+      [rut, email]
+    );
+
+    if (cuentaExiste.rows.length > 0) {
+      res.status(409).json({
+        success: false,
+        message: "Ya existe una cuenta con ese RUT o email",
+      });
+      return;
+    }
+
+    // Hash de contraseña
+    const password_hash = await bcrypt.hash(password, 10);
+
+    // Insertar en logistica.log_cuentas
+    const result = await pool.query(
+      `INSERT INTO logistica.log_cuentas 
+       (rut, email, password_hash, nombre, apellido, rol, activo)
+       VALUES ($1, $2, $3, $4, $5, $6, true)
+       RETURNING id, rut, email, nombre, apellido, rol`,
+      [rut, email, password_hash, nombre, apellido || "", rol || "EMPLEADO_LOGISTICA"]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Cuenta creada exitosamente",
+      data: result.rows[0],
+    });
+  } catch (error: any) {
+    console.error("Error en register:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error del servidor",
+      error: error.message,
+    });
   }
 };
